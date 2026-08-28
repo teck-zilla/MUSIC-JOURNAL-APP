@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Music Journal & Mood Tracker</title>
+  <meta name="description" content="A Spotify-inspired music journal app to log songs, rate tracks, track moods, and receive personalized recommendations influenced by your journaling habits.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        </div>
+        <span class="brand-title">Music Journal</span>
+      </div>
+
+      <nav class="nav-section">
+        <span class="nav-label">Menu</span>
+        <a href="#" class="nav-item active" data-target-view="discover">
+          <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+          <span>Discover & For You</span>
+        </a>
+        <a href="#" class="nav-item" data-target-view="journal">
+          <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+          <span>My Music Journal</span>
+        </a>
+        <a href="#" class="nav-item" data-target-view="analytics">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+          <span>Mood & Analytics</span>
+        </a>
+      </nav>
+
+      <!-- Connected Streaming Platform Card -->
+      <div class="platform-card">
+        <div class="platform-status">
+          <div id="platformStatusBadge" class="platform-badge connected"></div>
+          <div class="platform-info">
+            <span id="platformNameText" class="platform-name">Spotify Premium</span>
+            <span class="platform-desc">Streaming Sync Active</span>
+          </div>
+        </div>
+        <button id="btnOpenPlatformModal" class="btn-connect">Manage Account</button>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main-content">
+      
+      <!-- Top Sticky Header -->
+      <header class="top-header">
+        <div class="search-box">
+          <div class="search-icon">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          </div>
+          <input type="text" id="globalSearchInput" class="search-input" placeholder="Search live songs, artists, genres...">
+        </div>
+
+        <div class="top-actions">
+          <button id="btnExportData" class="btn-secondary" title="Export Backup JSON">
+            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            <span>Export</span>
+          </button>
+          <button id="btnImportData" class="btn-secondary" title="Import Backup JSON">
+            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+            <span>Import</span>
+          </button>
+          <input type="file" id="importFileInput" accept=".json" style="display: none;">
+          <button id="btnResetData" class="btn-secondary" title="Reset to Defaults">Reset</button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: DISCOVER & RECOMMENDATIONS -->
+      <section id="view-discover" class="view-panel active">
+        
+        <div class="hero-banner">
+          <div class="hero-content">
+            <span class="hero-tag">Personalized Browsing</span>
+            <h1 class="hero-title">Your Journal Influences Your Taste</h1>
+            <p class="hero-subtitle">Every rating and mood tag you record shapes your discovery feed with adaptive soundscapes tuned specifically to your listening history.</p>
+            <div class="hero-stats">
+              <div class="stat-item">
+                <span id="statTotalEntries" class="stat-value">4</span>
+                <span class="stat-label">Journal Entries</span>
+              </div>
+              <div class="stat-item">
+                <span id="statAvgRating" class="stat-value">4.8 ★</span>
+                <span class="stat-label">Average Rating</span>
+              </div>
+              <div class="stat-item">
+                <span id="statTopMood" class="stat-value">Hype</span>
+                <span class="stat-label">Dominant Mood</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div>
+            <h2 id="recommendationMoodHeadline" class="section-title">Recommended For You</h2>
+            <p id="habitInsightTag" style="font-size: 0.8rem; color: var(--text-sub); margin-top: 2px;">Influenced by your recent journal entries</p>
+          </div>
+        </div>
+
+        <div id="recommendationsGrid" class="cards-grid">
+          <!-- Dynamic Recommendation Cards Rendered Here -->
+        </div>
+
+      </section>
+
+      <!-- VIEW 2: MY JOURNAL ENTRIES -->
+      <section id="view-journal" class="view-panel">
+        
+        <div class="section-header">
+          <h2 class="section-title">My Music Journal</h2>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <button class="chip-filter active" data-filter-mood="all">All Moods</button>
+          <button class="chip-filter" data-filter-mood="energetic">⚡ Energetic</button>
+          <button class="chip-filter" data-filter-mood="chill">☕ Chill</button>
+          <button class="chip-filter" data-filter-mood="melancholic">🌧️ Melancholic</button>
+          <button class="chip-filter" data-filter-mood="focused">🎯 Focused</button>
+          <button class="chip-filter" data-filter-mood="euphoric">🚀 Euphoric</button>
+          <button class="chip-filter" data-filter-mood="nostalgic">🌅 Nostalgic</button>
+          <button class="chip-filter" data-filter-mood="hype">🔥 Hype</button>
+        </div>
+
+        <!-- Journal Entry Cards Grid -->
+        <div id="journalGrid" class="cards-grid">
+          <!-- Dynamic Journal Entry Cards Rendered Here -->
+        </div>
+
+      </section>
+
+      <!-- VIEW 3: MOOD & ANALYTICS -->
+      <section id="view-analytics" class="view-panel">
+        
+        <div class="section-header">
+          <h2 class="section-title">Listening Mood Analytics</h2>
+        </div>
+
+        <div class="analytics-grid">
+          
+          <div class="analytics-card" style="grid-column: 1 / -1;">
+            <h3 style="font-size: 1.05rem; font-weight: 700;">Mood Distribution Breakdown</h3>
+            <p style="font-size: 0.8rem; color: var(--text-sub);">Frequency of mood tags assigned across all saved journal entries</p>
+            <div id="moodChartContainer" class="chart-container">
+              <!-- Animated Bar Chart Rendered via JS -->
+            </div>
+          </div>
+
+          <div class="analytics-card">
+            <h3 style="font-size: 1.05rem; font-weight: 700;">Journal Insights</h3>
+            <p style="font-size: 0.85rem; color: var(--text-sub); line-height: 1.6;">
+              Your journaling habits show high engagement during evening hours with a preference for high-energy synthwave and relaxing ambient soundscapes.
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- VIEW 4: SEARCH RESULTS -->
+      <section id="view-search-results" class="view-panel">
+        <div class="section-header">
+          <h2 id="searchHeaderTitle" class="section-title">Search Results</h2>
+        </div>
+        <div id="searchResultsGrid" class="cards-grid">
+          <!-- Live Search Cards Rendered Here -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ================= AUDIO PLAYER BAR (BOTTOM) ================= -->
+    <div class="player-bar">
+      
+      <div class="player-track-info">
+        <img id="playerCover" class="player-cover" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=150&q=80" alt="Current Track Cover">
+        <div class="player-meta">
+          <span id="playerTitle" class="player-title">Select a track to play</span>
+          <span id="playerArtist" class="player-artist">Spotify Music Journal</span>
+        </div>
+      </div>
+
+      <div class="player-controls">
+        <div class="control-btns">
+          <button id="btnPlayPause" class="btn-play-pause" title="Play/Pause">
+            <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="pauseIcon" viewBox="0 0 24 24" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+        </div>
+
+        <div class="playback-timeline">
+          <span id="currentTime" class="time-stamp">0:00</span>
+          <div id="progressBar" class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+          <span id="durationTime" class="time-stamp">0:30</span>
+        </div>
+      </div>
+
+      <div class="player-extra">
+        <canvas id="visualizerCanvas" width="100" height="30" title="Audio Spectrum Visualizer"></canvas>
+        <div class="volume-container">
+          <svg style="width: 18px; height: 18px; color: var(--text-sub);" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+          </svg>
+          <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= MODAL: CREATE JOURNAL ENTRY ================= -->
+  <div id="journalModal" class="modal-overlay">
+    <div class="modal-card">
+      
+      <div class="modal-header">
+        <h2 class="modal-title">Log Journal Entry</h2>
+        <button id="btnCloseJournalModal" class="btn-close">&times;</button>
+      </div>
+
+      <!-- Selected Track Info Banner -->
+      <div style="display: flex; gap: 14px; align-items: center; background: var(--bg-card); padding: 12px; border-radius: var(--radius-md);">
+        <img id="modalTrackCover" src="" style="width: 60px; height: 60px; border-radius: var(--radius-sm); object-fit: cover;">
+        <div>
+          <h4 id="modalTrackTitle" style="font-size: 1rem; font-weight: 700;">Track Name</h4>
+          <p id="modalTrackArtist" style="font-size: 0.82rem; color: var(--text-sub);">Artist</p>
+          <span id="modalTrackGenre" style="font-size: 0.72rem; color: var(--primary); font-weight: 700;">Genre</span>
+        </div>
+      </div>
+
+      <form id="journalForm" style="display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Rating Picker -->
+        <div class="form-group">
+          <label class="form-label">Track Rating</label>
+          <div id="starRatingPicker" class="star-rating-picker">
+            <span class="star active" data-value="1">★</span>
+            <span class="star active" data-value="2">★</span>
+            <span class="star active" data-value="3">★</span>
+            <span class="star active" data-value="4">★</span>
+            <span class="star active" data-value="5">★</span>
+          </div>
+          <input type="hidden" id="selectedRatingInput" value="5">
+        </div>
+
+        <!-- Mood Tag Picker -->
+        <div class="form-group">
+          <label class="form-label">Corresponding Mood</label>
+          <div id="moodPicker" class="mood-picker">
+            <button type="button" class="mood-chip-btn selected" data-mood="energetic" data-label="⚡ Energetic">⚡ Energetic</button>
+            <button type="button" class="mood-chip-btn" data-mood="chill" data-label="☕ Chill">☕ Chill</button>
+            <button type="button" class="mood-chip-btn" data-mood="melancholic" data-label="🌧️ Melancholic">🌧️ Melancholic</button>
+            <button type="button" class="mood-chip-btn" data-mood="focused" data-label="🎯 Focused">🎯 Focused</button>
+            <button type="button" class="mood-chip-btn" data-mood="euphoric" data-label="🚀 Euphoric">🚀 Euphoric</button>
+            <button type="button" class="mood-chip-btn" data-mood="nostalgic" data-label="🌅 Nostalgic">🌅 Nostalgic</button>
+            <button type="button" class="mood-chip-btn" data-mood="hype" data-label="🔥 Hype">🔥 Hype</button>
+          </div>
+          <input type="hidden" id="selectedMoodInput" value="energetic">
+          <input type="hidden" id="selectedMoodLabelInput" value="⚡ Energetic">
+        </div>
+
+        <!-- Listening Context -->
+        <div class="form-group">
+          <label class="form-label" for="journalContextInput">Listening Setting / Context</label>
+          <input type="text" id="journalContextInput" class="form-input" placeholder="e.g. Rainy night drive, Late night coding, Workout session">
+        </div>
+
+        <!-- Note Textarea -->
+        <div class="form-group">
+          <label class="form-label" for="journalNoteInput">Journal Reflection Note</label>
+          <textarea id="journalNoteInput" class="form-textarea" placeholder="Write how this song makes you feel, key musical elements, memories, or lyrics that hit hard..."></textarea>
+        </div>
+
+        <!-- Platform Tag -->
+        <div class="form-group">
+          <label class="form-label" for="journalPlatformSelect">Streaming Platform</label>
+          <select id="journalPlatformSelect" class="form-select">
+            <option value="Spotify">Spotify</option>
+            <option value="Apple Music">Apple Music</option>
+            <option value="YouTube Music">YouTube Music</option>
+            <option value="Tidal">Tidal</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary" style="justify-content: center; width: 100%; margin-top: 10px;">Save Journal Entry</button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONNECT PLATFORM ================= -->
+  <div id="platformModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Connect Streaming Platform</h2>
+        <button id="btnClosePlatformModal" class="btn-close">&times;</button>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-sub);">Select your primary music platform to sync playback activity and profile metadata into your journal.</p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn-platform-option btn-secondary" data-platform="Spotify Premium" style="justify-content: space-between; padding: 14px 20px;">
+          <span style="font-weight: 700; color: #1db954;">Spotify</span>
+          <span style="font-size: 0.8rem; color: var(--text-sub);">Connected ✓</span>
+        </button>
+
+        <button class="btn-platform-option btn-secondary" data-platform="Apple Music" style="justify-content: space-between; padding: 14px 20px;">
+          <span style="font-weight: 700; color: #fc3c44;">Apple Music</span>
+          <span style="font-size: 0.8rem; color: var(--text-sub);">Connect</span>
+        </button>
+
+        <button class="btn-platform-option btn-secondary" data-platform="YouTube Music" style="justify-content: space-between; padding: 14px 20px;">
+          <span style="font-weight: 700; color: #ff0000;">YouTube Music</span>
+          <span style="font-size: 0.8rem; color: var(--text-sub);">Connect</span>
+        </button>
+
+        <button class="btn-platform-option btn-secondary" data-platform="Tidal" style="justify-content: space-between; padding: 14px 20px;">
+          <span style="font-weight: 700; color: #00ffff;">Tidal</span>
+          <span style="font-size: 0.8rem; color: var(--text-sub);">Connect</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Main JavaScript Module -->
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
