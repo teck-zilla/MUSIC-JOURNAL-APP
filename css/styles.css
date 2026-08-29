@@ -23,6 +23,13 @@
   --border-light: rgba(255, 255, 255, 0.1);
   --border-active: rgba(29, 185, 84, 0.5);
 
+  /* Platform Brand Colors */
+  --spotify-color: #1db954;
+  --apple-color: #fc3c44;
+  --audiomack-color: #ffa200;
+  --soundcloud-color: #ff5500;
+  --tidal-color: #00ffff;
+
   /* Mood Gradients & Accents */
   --mood-energetic: linear-gradient(135deg, #ff416c, #ff4b2b);
   --mood-chill: linear-gradient(135deg, #4776e6, #8e54e9);
@@ -31,12 +38,6 @@
   --mood-euphoric: linear-gradient(135deg, #ff007f, #7928ca);
   --mood-nostalgic: linear-gradient(135deg, #f2994a, #f2c94c);
   --mood-hype: linear-gradient(135deg, #f857a6, #ff5858);
-
-  /* Platform Colors */
-  --spotify-color: #1db954;
-  --apple-color: #fc3c44;
-  --yt-color: #ff0000;
-  --tidal-color: #00ffff;
 
   /* Geometry & Shadows */
   --radius-sm: 6px;
@@ -242,6 +243,11 @@ a {
   box-shadow: 0 0 10px var(--primary);
 }
 
+.platform-badge.spotify { background-color: var(--spotify-color); box-shadow: 0 0 10px var(--spotify-color); }
+.platform-badge.apple { background-color: var(--apple-color); box-shadow: 0 0 10px var(--apple-color); }
+.platform-badge.audiomack { background-color: var(--audiomack-color); box-shadow: 0 0 10px var(--audiomack-color); }
+.platform-badge.soundcloud { background-color: var(--soundcloud-color); box-shadow: 0 0 10px var(--soundcloud-color); }
+
 .platform-info {
   display: flex;
   flex-direction: column;
@@ -276,7 +282,7 @@ a {
 }
 
 /* ==========================================================================
-   MAIN CONTENT AREA
+   MAIN CONTENT AREA & TOP HEADER
    ========================================================================== */
 .main-content {
   grid-area: main;
@@ -347,6 +353,110 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* User Profile Header Dropdown Widget */
+.user-profile-widget {
+  position: relative;
+}
+
+.user-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 4px 4px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+
+.user-profile-btn:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--text-sub);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-platform-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  color: #000;
+  background: var(--primary);
+}
+
+.user-platform-tag.spotify { background-color: var(--spotify-color); color: #000; }
+.user-platform-tag.apple { background-color: var(--apple-color); color: #fff; }
+.user-platform-tag.audiomack { background-color: var(--audiomack-color); color: #000; }
+.user-platform-tag.soundcloud { background-color: var(--soundcloud-color); color: #fff; }
+
+.profile-dropdown-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  width: 220px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--transition-fast);
+  z-index: 100;
+}
+
+.profile-dropdown-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin: 4px 0;
 }
 
 .btn-primary {
@@ -925,14 +1035,14 @@ a {
 }
 
 /* ==========================================================================
-   MODALS
+   MODALS & AUTHENTICATION CARDS
    ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -956,7 +1066,7 @@ a {
   max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 24px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -994,6 +1104,67 @@ a {
 .btn-close:hover {
   background-color: rgba(255, 255, 255, 0.16);
   color: var(--text-main);
+}
+
+/* Multi-Platform Auth Brand Buttons */
+.auth-platforms-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.btn-auth-platform {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.btn-auth-platform:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-auth-spotify {
+  background-color: #1db954;
+  color: #000;
+}
+.btn-auth-spotify:hover {
+  background-color: #1ed760;
+  box-shadow: 0 0 20px rgba(29, 185, 84, 0.4);
+}
+
+.btn-auth-apple {
+  background-color: #fc3c44;
+  color: #fff;
+}
+.btn-auth-apple:hover {
+  background-color: #ff4f56;
+  box-shadow: 0 0 20px rgba(252, 60, 68, 0.4);
+}
+
+.btn-auth-audiomack {
+  background-color: #ffa200;
+  color: #000;
+}
+.btn-auth-audiomack:hover {
+  background-color: #ffb426;
+  box-shadow: 0 0 20px rgba(255, 162, 0, 0.4);
+}
+
+.btn-auth-soundcloud {
+  background-color: #ff5500;
+  color: #fff;
+}
+.btn-auth-soundcloud:hover {
+  background-color: #ff6a1a;
+  box-shadow: 0 0 20px rgba(255, 85, 0, 0.4);
 }
 
 /* Modal Form Controls */

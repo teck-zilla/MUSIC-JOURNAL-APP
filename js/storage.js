@@ -1,12 +1,62 @@
 /**
  * SPOTIFY MUSIC JOURNAL - WEB STORAGE MANAGER
- * Handles localStorage persistence, initial seed data, and JSON backup/restore.
+ * Handles localStorage persistence, multi-platform user authentication,
+ * initial seed data, and JSON backup/restore.
  */
 
 const STORAGE_KEYS = {
   JOURNAL_ENTRIES: 'spotify_journal_entries_v1',
   CONNECTED_PLATFORM: 'spotify_journal_platform_v1',
-  USER_PREFERENCES: 'spotify_journal_prefs_v1'
+  USER_PREFERENCES: 'spotify_journal_prefs_v1',
+  AUTH_USER: 'spotify_journal_auth_user_v2'
+};
+
+// Preset User Profiles for Multi-Platform Login
+const PLATFORM_PROFILES = {
+  spotify: {
+    platform: 'Spotify',
+    platformId: 'spotify',
+    displayName: 'Alex Vance',
+    handle: '@alexvance_sp',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    badge: 'Spotify Premium',
+    badgeClass: 'spotify',
+    color: '#1db954',
+    isLoggedIn: true
+  },
+  apple: {
+    platform: 'Apple Music',
+    platformId: 'apple',
+    displayName: 'Alex Vance',
+    handle: '@alexvance_am',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    badge: 'Apple Music Subscriber',
+    badgeClass: 'apple',
+    color: '#fc3c44',
+    isLoggedIn: true
+  },
+  audiomack: {
+    platform: 'Audiomack',
+    platformId: 'audiomack',
+    displayName: 'Alex Vance',
+    handle: '@alexvance_amk',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
+    badge: 'Audiomack VIP',
+    badgeClass: 'audiomack',
+    color: '#ffa200',
+    isLoggedIn: true
+  },
+  soundcloud: {
+    platform: 'SoundCloud',
+    platformId: 'soundcloud',
+    displayName: 'Alex Vance',
+    handle: '@alexvance_sc',
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
+    badge: 'SoundCloud Next Pro',
+    badgeClass: 'soundcloud',
+    color: '#ff5500',
+    isLoggedIn: true
+  }
 };
 
 // Initial Seed Data for Instant Visual Experience
@@ -75,7 +125,7 @@ const INITIAL_SEED_ENTRIES = [
     moodLabel: '☕ Chill',
     context: 'Deep Focus Coding',
     note: 'Warm analogue synthesizers looping effortlessly. Kept me in the flow state for 3 hours straight.',
-    platform: 'Spotify',
+    platform: 'SoundCloud',
     createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
     isFavorite: true
   }
@@ -89,16 +139,67 @@ export const StorageManager = {
     if (!localStorage.getItem(STORAGE_KEYS.JOURNAL_ENTRIES)) {
       this.saveEntries(INITIAL_SEED_ENTRIES);
     }
-    if (!localStorage.getItem(STORAGE_KEYS.CONNECTED_PLATFORM)) {
-      this.savePlatform({
-        name: 'Spotify Premium',
-        id: 'spotify',
-        connected: true,
-        user: 'Music Lover',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-        connectedAt: new Date().toISOString()
-      });
+    if (!localStorage.getItem(STORAGE_KEYS.AUTH_USER)) {
+      this.saveAuthUser(PLATFORM_PROFILES.spotify);
     }
+  },
+
+  /**
+   * Returns current authenticated user profile
+   */
+  getAuthUser() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.AUTH_USER);
+      return data ? JSON.parse(data) : PLATFORM_PROFILES.spotify;
+    } catch (e) {
+      return PLATFORM_PROFILES.spotify;
+    }
+  },
+
+  /**
+   * Saves user authentication state
+   */
+  saveAuthUser(userProfile) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(userProfile));
+    } catch (e) {
+      console.error('Failed to save auth profile:', e);
+    }
+  },
+
+  /**
+   * Authenticates user using platform profile ID (spotify, apple, audiomack, soundcloud)
+   */
+  loginPlatform(platformId, customData = {}) {
+    const preset = PLATFORM_PROFILES[platformId] || PLATFORM_PROFILES.spotify;
+    const userProfile = {
+      ...preset,
+      ...customData,
+      isLoggedIn: true,
+      lastLogin: new Date().toISOString()
+    };
+    this.saveAuthUser(userProfile);
+    return userProfile;
+  },
+
+  /**
+   * Logs out current user session
+   */
+  logoutUser() {
+    const current = this.getAuthUser();
+    const loggedOutUser = {
+      ...current,
+      isLoggedIn: false
+    };
+    this.saveAuthUser(loggedOutUser);
+    return loggedOutUser;
+  },
+
+  /**
+   * Returns available platform profile presets
+   */
+  getPlatformPresets() {
+    return PLATFORM_PROFILES;
   },
 
   /**
@@ -169,33 +270,14 @@ export const StorageManager = {
   },
 
   /**
-   * Gets connected streaming platform state
-   */
-  getPlatform() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.CONNECTED_PLATFORM);
-      return data ? JSON.parse(data) : { connected: false };
-    } catch (e) {
-      return { connected: false };
-    }
-  },
-
-  /**
-   * Saves connected streaming platform info
-   */
-  savePlatform(platformObj) {
-    localStorage.setItem(STORAGE_KEYS.CONNECTED_PLATFORM, JSON.stringify(platformObj));
-  },
-
-  /**
    * Exports backup JSON string
    */
   exportData() {
     const payload = {
-      version: '1.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
       entries: this.getEntries(),
-      platform: this.getPlatform()
+      authUser: this.getAuthUser()
     };
     return JSON.stringify(payload, null, 2);
   },
@@ -209,8 +291,8 @@ export const StorageManager = {
       if (Array.isArray(data.entries)) {
         this.saveEntries(data.entries);
       }
-      if (data.platform) {
-        this.savePlatform(data.platform);
+      if (data.authUser) {
+        this.saveAuthUser(data.authUser);
       }
       return true;
     } catch (e) {
@@ -224,7 +306,7 @@ export const StorageManager = {
    */
   resetToDefaults() {
     localStorage.removeItem(STORAGE_KEYS.JOURNAL_ENTRIES);
-    localStorage.removeItem(STORAGE_KEYS.CONNECTED_PLATFORM);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
     this.init();
   }
 };

@@ -1,6 +1,7 @@
 /**
  * SPOTIFY MUSIC JOURNAL - MAIN APP CONTROLLER
- * Initializes components, view switching, live search handlers, streaming platform connections, and toast notifications.
+ * Initializes components, multi-platform profile authentication (Spotify, Apple Music, Audiomack, SoundCloud),
+ * view switching, live search handlers, streaming platform connections, and toast notifications.
  */
 
 import { StorageManager } from './storage.js';
@@ -29,6 +30,7 @@ class AppController {
     // 3. Bind UI Events & Navigation
     this.bindNavigation();
     this.bindSearch();
+    this.bindAuthEvents();
     this.bindPlatformModal();
     this.bindBackupDataEvents();
 
@@ -153,6 +155,67 @@ class AppController {
     });
   }
 
+  bindAuthEvents() {
+    const profileBtn = document.getElementById('userProfileBtn');
+    const dropdown = document.getElementById('userProfileDropdown');
+    const loginModal = document.getElementById('loginModal');
+    const btnOpenLogin = document.getElementById('btnOpenLoginModal');
+    const btnCloseLogin = document.getElementById('btnCloseLoginModal');
+    const btnLogout = document.getElementById('btnLogout');
+    const authPlatformBtns = document.querySelectorAll('.btn-auth-platform');
+
+    // Header Profile Dropdown Toggle
+    if (profileBtn && dropdown) {
+      profileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('active');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.user-profile-widget')) {
+          dropdown.classList.remove('active');
+        }
+      });
+    }
+
+    // Modal Open/Close
+    if (btnOpenLogin && loginModal) {
+      btnOpenLogin.addEventListener('click', () => {
+        loginModal.classList.add('active');
+        if (dropdown) dropdown.classList.remove('active');
+      });
+    }
+
+    if (btnCloseLogin && loginModal) {
+      btnCloseLogin.addEventListener('click', () => {
+        loginModal.classList.remove('active');
+      });
+    }
+
+    // Platform Auth Buttons (Spotify, Apple Music, Audiomack, SoundCloud)
+    authPlatformBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const platformId = btn.dataset.authPlatform;
+        const userProfile = StorageManager.loginPlatform(platformId);
+        
+        this.updatePlatformUI();
+        if (loginModal) loginModal.classList.remove('active');
+        this.showToast(`Logged in with ${userProfile.platform} profile!`);
+      });
+    });
+
+    // Logout
+    if (btnLogout) {
+      btnLogout.addEventListener('click', () => {
+        StorageManager.logoutUser();
+        if (dropdown) dropdown.classList.remove('active');
+        if (loginModal) loginModal.classList.add('active');
+        this.updatePlatformUI();
+        this.showToast('Logged out of platform session');
+      });
+    }
+  }
+
   bindPlatformModal() {
     const btnConnect = document.getElementById('btnOpenPlatformModal');
     const modal = document.getElementById('platformModal');
@@ -169,31 +232,68 @@ class AppController {
 
     platformBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        const platformName = btn.dataset.platform;
-        StorageManager.savePlatform({
-          name: platformName,
-          connected: true,
-          user: 'Music Lover',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-          connectedAt: new Date().toISOString()
-        });
+        const platformId = btn.dataset.platformId;
+        const userProfile = StorageManager.loginPlatform(platformId);
 
         this.updatePlatformUI();
         if (modal) modal.classList.remove('active');
-        this.showToast(`Connected to ${platformName}!`);
+        this.showToast(`Switched active profile to ${userProfile.platform}!`);
       });
     });
   }
 
   updatePlatformUI() {
-    const p = StorageManager.getPlatform();
-    const nameElem = document.getElementById('platformNameText');
+    const user = StorageManager.getAuthUser();
+
+    // 1. Top Header User Profile Widget
+    const nameElem = document.getElementById('userNameText');
+    const avatarImg = document.getElementById('userAvatarImg');
+    const badgeTag = document.getElementById('userPlatformBadge');
+    const dropdownName = document.getElementById('dropdownDisplayName');
+    const dropdownHandle = document.getElementById('dropdownHandle');
+
+    if (nameElem) nameElem.textContent = user.displayName || 'Guest User';
+    if (avatarImg && user.avatar) avatarImg.src = user.avatar;
+    if (dropdownName) dropdownName.textContent = user.displayName || 'Guest User';
+    if (dropdownHandle) dropdownHandle.textContent = user.handle || '@music_lover';
+
+    if (badgeTag) {
+      badgeTag.textContent = user.platform || 'Spotify';
+      badgeTag.className = `user-platform-tag ${user.badgeClass || 'spotify'}`;
+    }
+
+    // 2. Sidebar Platform Status Card
+    const platformNameText = document.getElementById('platformNameText');
+    const platformHandleText = document.getElementById('platformHandleText');
     const statusDot = document.getElementById('platformStatusBadge');
 
-    if (nameElem) nameElem.textContent = p.name || 'Not Connected';
+    if (platformNameText) platformNameText.textContent = user.badge || `${user.platform} Connected`;
+    if (platformHandleText) platformHandleText.textContent = user.isLoggedIn ? user.handle : 'Logged Out';
+
     if (statusDot) {
-      if (p.connected) statusDot.classList.add('connected');
-      else statusDot.classList.remove('connected');
+      statusDot.className = `platform-badge ${user.isLoggedIn ? (user.badgeClass || 'connected') : ''}`;
+    }
+
+    // 3. Update Modal Platform Option Badges
+    const options = document.querySelectorAll('.btn-platform-option');
+    options.forEach(opt => {
+      const optId = opt.dataset.platformId;
+      const statusSpan = opt.querySelector('.platform-option-status');
+      if (statusSpan) {
+        if (user.isLoggedIn && user.platformId === optId) {
+          statusSpan.textContent = 'Active ✓';
+          statusSpan.style.color = user.color || 'var(--primary)';
+        } else {
+          statusSpan.textContent = 'Connect';
+          statusSpan.style.color = 'var(--text-sub)';
+        }
+      }
+    });
+
+    // 4. Update Journal Modal Default Platform Selector
+    const platformSelect = document.getElementById('journalPlatformSelect');
+    if (platformSelect && user.platform) {
+      platformSelect.value = user.platform;
     }
   }
 
@@ -230,6 +330,7 @@ class AppController {
             Journal.render();
             RecommendationEngine.render();
             Analytics.render();
+            this.updatePlatformUI();
             this.showToast('Journal restored from backup!');
           } else {
             alert('Invalid backup JSON file.');
@@ -246,6 +347,7 @@ class AppController {
           Journal.render();
           RecommendationEngine.render();
           Analytics.render();
+          this.updatePlatformUI();
           this.showToast('Journal reset to default demo entries.');
         }
       });
