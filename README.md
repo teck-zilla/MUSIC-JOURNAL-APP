@@ -15,7 +15,13 @@ People listen to lots of music but often forget songs they enjoyed or why they l
 
 Tech Stack
 Pure Vanilla HTML5, CSS3 (using CSS custom properties/variables), and Vanilla JavaScript (ES6+ Modules). No React, No Tailwind.
+HTML – Structure and content
+CSS – Styling and layout
+JavaScript – Functionality and interactions
+Git & GitHub – Version control and project management
+
 Audio & Live Search API: Uses the live iTunes Search API (free, no auth token required) to query millions of real songs with high-res cover art and 30-second audio previews, alongside a rich offline fallback dataset and Spotify Web API integration hooks.
+
 Data Persistence: Uses localStorage with JSON import/export capability and pre-populated sample entries for an instant, visually rich experience.
 
 
@@ -41,3 +47,15 @@ Spotify-Inspired Visual Design
 
 Spotify Dark Vibe Interface:
 Spotify signature color palette (#121212, #181818, #1DB954), sidebar navigation, hero section, responsive cards, and fixed bottom audio player bar with Web Audio API canvas visualizer.
+
+
+Future Improvements
+
+Future versions of Music Journal could include:
+
+Music statistics
+Show information such as favourite artists, genres, and listening trends.
+Recommendations
+Suggest new music based on the user's ratings and journal history.
+Improved personalisation
+Allow users to customize their profile, themes, and journal.
