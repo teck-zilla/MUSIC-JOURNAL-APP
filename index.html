@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Apple MusicKit JS SDK -->
+  <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -252,61 +254,65 @@
 
   </div>
 
-  <!-- ================= MODAL: MULTI-PLATFORM LOGIN ================= -->
+  <!-- ================= MODAL: MULTI-PLATFORM REAL OAUTH LOGIN ================= -->
   <div id="loginModal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
-        <h2 class="modal-title">Log In to Music Journal</h2>
+        <h2 class="modal-title">Log In with Real Account</h2>
         <button id="btnCloseLoginModal" class="btn-close">&times;</button>
       </div>
 
-      <p style="font-size: 0.88rem; color: var(--text-sub);">Connect your favorite streaming profile to sync your music entries, mood ratings, and taste recommendations.</p>
+      <p style="font-size: 0.88rem; color: var(--text-sub);">Authenticate directly with your authentic Spotify, Apple Music, Audiomack, or SoundCloud user account.</p>
 
       <div class="auth-platforms-grid">
-        <button class="btn-auth-platform btn-auth-spotify" data-auth-platform="spotify">
+        <button id="btnRealSpotifyLogin" class="btn-auth-platform btn-auth-spotify" data-auth-platform="spotify">
           <div style="display: flex; align-items: center; gap: 12px;">
             <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24"><path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm5.521 17.341c-.218.359-.683.473-1.04.254-2.855-1.745-6.452-2.14-10.685-1.173-.408.093-.815-.164-.908-.572-.093-.408.164-.815.572-.908 4.634-1.06 8.599-.607 11.807 1.359.358.218.473.683.254 1.04zm1.479-3.284c-.274.446-.86.588-1.306.314-3.267-2.008-8.249-2.59-12.115-1.417-.5.152-1.034-.135-1.186-.635-.152-.5.135-1.034.635-1.186 4.417-1.34 9.91-.689 13.658 1.612.446.274.588.86.314 1.306zm.126-3.416C15.228 8.441 8.8 8.228 5.124 9.344c-.612.186-1.258-.168-1.444-.78-.186-.612.168-1.258.78-1.444 4.225-1.282 11.315-1.026 15.753 1.609.55.326.732 1.037.406 1.587-.326.55-1.037.732-1.587.406z"/></svg>
-            <span>Log In with Spotify</span>
+            <span>Log In with Real Spotify (OAuth PKCE)</span>
           </div>
           <span>→</span>
         </button>
 
-        <button class="btn-auth-platform btn-auth-apple" data-auth-platform="apple">
+        <button id="btnRealAppleLogin" class="btn-auth-platform btn-auth-apple" data-auth-platform="apple">
           <div style="display: flex; align-items: center; gap: 12px;">
             <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.32c.68-.83 1.15-1.98.99-3.14-.99.04-2.22.66-2.93 1.49-.63.73-1.18 1.91-1.03 3.04 1.11.09 2.29-.56 2.97-1.39z"/></svg>
-            <span>Log In with Apple Music</span>
+            <span>Log In with Real Apple Music (MusicKit)</span>
           </div>
           <span>→</span>
         </button>
 
-        <button class="btn-auth-platform btn-auth-audiomack" data-auth-platform="audiomack">
+        <button id="btnRealAudiomackLogin" class="btn-auth-platform btn-auth-audiomack" data-auth-platform="audiomack">
           <div style="display: flex; align-items: center; gap: 12px;">
             <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.8L19.2 8 12 11.2 4.8 8 12 4.8zM4 9.6l7 3.1v6.5l-7-3.5V9.6zm16 6.1l-7 3.5v-6.5l7-3.1v6.1z"/></svg>
-            <span>Log In with Audiomack</span>
+            <span>Log In with Real Audiomack</span>
           </div>
           <span>→</span>
         </button>
 
-        <button class="btn-auth-platform btn-auth-soundcloud" data-auth-platform="soundcloud">
+        <button id="btnRealSoundcloudLogin" class="btn-auth-platform btn-auth-soundcloud" data-auth-platform="soundcloud">
           <div style="display: flex; align-items: center; gap: 12px;">
             <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24"><path d="M1.175 12.225c-.062 0-.125.025-.162.075-.05.05-.075.112-.075.175v4.925c0 .063.025.125.075.175.037.037.1.063.162.063h.05c.063 0 .125-.026.163-.063.05-.05.075-.112.075-.175v-4.925c0-.063-.025-.125-.075-.175-.038-.05-.1-.075-.163-.075h-.05zm1.538-1.5c-.063 0-.126.025-.176.075-.037.05-.062.113-.062.175v6.425c0 .063.025.125.062.175.05.038.113.063.176.063h.05c.062 0 .125-.025.175-.063.037-.05.062-.112.062-.175V10.975c0-.062-.025-.125-.062-.175-.05-.05-.113-.075-.175-.075h-.05zm1.525-1.1c-.063 0-.125.025-.175.075-.038.05-.063.113-.063.175v7.525c0 .063.025.125.063.175.05.038.112.063.175.063h.05c.063 0 .125-.025.175-.063.038-.05.063-.112.063-.175V9.875c0-.062-.025-.125-.063-.175-.05-.05-.112-.075-.175-.075h-.05zm1.537-.7c-.062 0-.125.025-.175.075-.037.05-.062.113-.062.175v8.225c0 .063.025.125.062.175.05.038.113.063.175.063h.05c.063 0 .125-.025.175-.063.038-.05.063-.112.063-.175V9.175c0-.062-.025-.125-.063-.175-.05-.05-.112-.075-.175-.075h-.05zm1.538-.45c-.063 0-.125.025-.175.075-.038.05-.063.113-.063.175v8.675c0 .063.025.125.063.175.05.038.112.063.175.063h.05c.062 0 .125-.025.175-.063.037-.05.062-.112.062-.175V8.725c0-.062-.025-.125-.062-.175-.05-.05-.113-.075-.175-.075h-.05zm11.75 3.325c-.275 0-.538.05-.788.138A4.747 4.747 0 0 0 16.2 9.5a4.74 4.74 0 0 0-4.713 4.225c-.275-.238-.625-.375-1.012-.375-.85 0-1.538.688-1.538 1.538 0 .85.688 1.537 1.538 1.537h8.612c1.475 0 2.675-1.2 2.675-2.675 0-1.475-1.2-2.675-2.675-2.675z"/></svg>
-            <span>Log In with SoundCloud</span>
+            <span>Log In with Real SoundCloud</span>
           </div>
           <span>→</span>
         </button>
       </div>
 
       <!-- Advanced OAuth / API Key Client ID Settings -->
-      <details style="margin-top: 10px; background: rgba(255,255,255,0.04); padding: 12px; border-radius: var(--radius-md);">
-        <summary style="font-size: 0.82rem; font-weight: 700; color: var(--text-sub); cursor: pointer;">Advanced API Client Credentials (Optional)</summary>
+      <details open style="margin-top: 10px; background: rgba(255,255,255,0.04); padding: 12px; border-radius: var(--radius-md);">
+        <summary style="font-size: 0.82rem; font-weight: 700; color: var(--text-sub); cursor: pointer;">Registered App Client ID Credentials (For Direct API OAuth)</summary>
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
           <div class="form-group">
-            <label class="form-label" style="font-size: 0.72rem;">Spotify Client ID</label>
-            <input type="text" id="customSpotifyClientId" class="form-input" placeholder="e.g. 4f8d9a2b1c3e..." style="font-size: 0.8rem; padding: 8px 10px;">
+            <label class="form-label" style="font-size: 0.72rem;">Spotify Client ID (From Spotify Developer Dashboard)</label>
+            <input type="text" id="customSpotifyClientId" class="form-input" placeholder="Enter your Spotify App Client ID..." style="font-size: 0.8rem; padding: 8px 10px;">
           </div>
           <div class="form-group">
             <label class="form-label" style="font-size: 0.72rem;">SoundCloud Client Key</label>
-            <input type="text" id="customSoundcloudKey" class="form-input" placeholder="e.g. sc_client_9921..." style="font-size: 0.8rem; padding: 8px 10px;">
+            <input type="text" id="customSoundcloudKey" class="form-input" placeholder="Enter SoundCloud Client Key..." style="font-size: 0.8rem; padding: 8px 10px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size: 0.72rem;">Apple Music Developer Token</label>
+            <input type="text" id="customAppleDevToken" class="form-input" placeholder="Enter MusicKit Developer JWT Token..." style="font-size: 0.8rem; padding: 8px 10px;">
           </div>
         </div>
       </details>

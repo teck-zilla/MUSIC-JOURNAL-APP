@@ -1,6 +1,6 @@
 /**
  * SPOTIFY MUSIC JOURNAL - MAIN APP CONTROLLER
- * Initializes components, multi-platform profile authentication (Spotify, Apple Music, Audiomack, SoundCloud),
+ * Initializes components, real OAuth 2.0 streaming platform authentication (Spotify, Apple Music, Audiomack, SoundCloud),
  * view switching, live search handlers, streaming platform connections, and toast notifications.
  */
 
@@ -10,6 +10,7 @@ import { Player } from './player.js';
 import { Journal } from './journal.js';
 import { RecommendationEngine } from './recommendation.js';
 import { Analytics } from './analytics.js';
+import { SpotifyOAuth, SoundCloudOAuth, AppleMusicAuth, AudiomackAuth, DEFAULT_CLIENT_IDS } from './oauth.js';
 
 class AppController {
   constructor() {
@@ -17,7 +18,7 @@ class AppController {
     this.searchTimeout = null;
   }
 
-  init() {
+  async init() {
     // 1. Initialize Storage & Seed Data
     StorageManager.init();
 
@@ -27,14 +28,17 @@ class AppController {
     RecommendationEngine.init();
     Analytics.init();
 
-    // 3. Bind UI Events & Navigation
+    // 3. Check for Real OAuth Callback Redirects (?code= or #access_token=)
+    await this.handleOAuthRedirectCallback();
+
+    // 4. Bind UI Events & Navigation
     this.bindNavigation();
     this.bindSearch();
     this.bindAuthEvents();
     this.bindPlatformModal();
     this.bindBackupDataEvents();
 
-    // 4. Initial Renders
+    // 5. Initial Renders
     Journal.render();
     RecommendationEngine.render();
     Analytics.render();
@@ -42,6 +46,41 @@ class AppController {
     this.loadSavedApiCredentials();
 
     console.log('Spotify Music Journal App Initialized Successfully!');
+  }
+
+  /**
+   * Auto-detects and processes OAuth callback parameters from Spotify / SoundCloud redirects
+   */
+  async handleOAuthRedirectCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const hash = window.location.hash;
+
+    // 1. Spotify OAuth 2.0 Authorization Code Callback
+    if (code) {
+      this.showToast('Authenticating with Spotify...');
+      const res = await SpotifyOAuth.handleCallback(code);
+      if (res && res.profile) {
+        StorageManager.saveAuthUser(res.profile);
+        this.updatePlatformUI();
+        this.showToast(`Authenticated as ${res.profile.displayName} on Spotify!`);
+      }
+      // Clean query string from browser address bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    // 2. SoundCloud OAuth Token Callback
+    else if (hash && hash.includes('access_token')) {
+      const hashParams = new URLSearchParams(hash.replace('#', '?'));
+      const accessToken = hashParams.get('access_token');
+      if (accessToken) {
+        this.showToast('Authenticating with SoundCloud...');
+        const profile = await SoundCloudOAuth.fetchProfile(accessToken);
+        StorageManager.saveAuthUser(profile);
+        this.updatePlatformUI();
+        this.showToast(`Authenticated as ${profile.displayName} on SoundCloud!`);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
   }
 
   bindNavigation() {
@@ -174,10 +213,16 @@ class AppController {
     const btnOpenLogin = document.getElementById('btnOpenLoginModal');
     const btnCloseLogin = document.getElementById('btnCloseLoginModal');
     const btnLogout = document.getElementById('btnLogout');
-    const authPlatformBtns = document.querySelectorAll('.btn-auth-platform');
+
+    // Real OAuth Buttons
+    const btnSpotifyReal = document.getElementById('btnRealSpotifyLogin');
+    const btnAppleReal = document.getElementById('btnRealAppleLogin');
+    const btnAudiomackReal = document.getElementById('btnRealAudiomackLogin');
+    const btnSoundcloudReal = document.getElementById('btnRealSoundcloudLogin');
 
     const spotifyClientInput = document.getElementById('customSpotifyClientId');
     const soundcloudKeyInput = document.getElementById('customSoundcloudKey');
+    const appleDevTokenInput = document.getElementById('customAppleDevToken');
 
     // Header Profile Dropdown Toggle
     if (profileBtn && dropdown) {
@@ -211,26 +256,61 @@ class AppController {
     const saveCreds = () => {
       const creds = {
         spotifyClientId: spotifyClientInput ? spotifyClientInput.value.trim() : '',
-        soundcloudKey: soundcloudKeyInput ? soundcloudKeyInput.value.trim() : ''
+        soundcloudKey: soundcloudKeyInput ? soundcloudKeyInput.value.trim() : '',
+        appleDevToken: appleDevTokenInput ? appleDevTokenInput.value.trim() : ''
       };
       StorageManager.saveApiCredentials(creds);
+      return creds;
     };
 
     if (spotifyClientInput) spotifyClientInput.addEventListener('change', saveCreds);
     if (soundcloudKeyInput) soundcloudKeyInput.addEventListener('change', saveCreds);
+    if (appleDevTokenInput) appleDevTokenInput.addEventListener('change', saveCreds);
 
-    // Platform Auth Buttons (Spotify, Apple Music, Audiomack, SoundCloud)
-    authPlatformBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        saveCreds();
-        const platformId = btn.dataset.authPlatform;
-        const userProfile = StorageManager.loginPlatform(platformId);
-        
+    // 1. Real Spotify OAuth Login Trigger
+    if (btnSpotifyReal) {
+      btnSpotifyReal.addEventListener('click', () => {
+        const creds = saveCreds();
+        const clientId = creds.spotifyClientId || DEFAULT_CLIENT_IDS.spotify;
+        this.showToast('Redirecting to Spotify Authorization...');
+        SpotifyOAuth.login(clientId);
+      });
+    }
+
+    // 2. Real Apple MusicKit Login Trigger
+    if (btnAppleReal) {
+      btnAppleReal.addEventListener('click', async () => {
+        const creds = saveCreds();
+        this.showToast('Launching Apple Music authorization...');
+        const userProfile = await AppleMusicAuth.login(creds.appleDevToken);
+        StorageManager.saveAuthUser(userProfile);
         this.updatePlatformUI();
         if (loginModal) loginModal.classList.remove('active');
-        this.showToast(`Logged in with ${userProfile.platform} profile!`);
+        this.showToast(`Logged in as ${userProfile.displayName} on Apple Music!`);
       });
-    });
+    }
+
+    // 3. Real Audiomack Login Trigger
+    if (btnAudiomackReal) {
+      btnAudiomackReal.addEventListener('click', async () => {
+        this.showToast('Connecting to Audiomack account...');
+        const userProfile = await AudiomackAuth.login();
+        StorageManager.saveAuthUser(userProfile);
+        this.updatePlatformUI();
+        if (loginModal) loginModal.classList.remove('active');
+        this.showToast(`Logged in as ${userProfile.displayName} on Audiomack!`);
+      });
+    }
+
+    // 4. Real SoundCloud OAuth Login Trigger
+    if (btnSoundcloudReal) {
+      btnSoundcloudReal.addEventListener('click', () => {
+        const creds = saveCreds();
+        const clientId = creds.soundcloudKey || DEFAULT_CLIENT_IDS.soundcloud;
+        this.showToast('Connecting to SoundCloud...');
+        SoundCloudOAuth.login(clientId);
+      });
+    }
 
     // Logout Action
     if (btnLogout) {
@@ -248,9 +328,11 @@ class AppController {
     const creds = StorageManager.getApiCredentials();
     const spotifyInput = document.getElementById('customSpotifyClientId');
     const soundcloudInput = document.getElementById('customSoundcloudKey');
+    const appleInput = document.getElementById('customAppleDevToken');
 
     if (spotifyInput && creds.spotifyClientId) spotifyInput.value = creds.spotifyClientId;
     if (soundcloudInput && creds.soundcloudKey) soundcloudInput.value = creds.soundcloudKey;
+    if (appleInput && creds.appleDevToken) appleInput.value = creds.appleDevToken;
   }
 
   bindPlatformModal() {
