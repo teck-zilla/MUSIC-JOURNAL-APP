@@ -23,25 +23,32 @@ export const PKCEHelper = {
   }
 };
 
-// Default public sandbox Client IDs (can be overridden by user in settings)
-export const DEFAULT_CLIENT_IDS = {
-  spotify: '4f8d9a2b1c3e4f5a6b7c8d9e0f1a2b3c',
-  soundcloud: 'sc_client_default_9921',
-  appleMusicDevToken: ''
-};
-
 export const SpotifyOAuth = {
+  /**
+   * Validates whether a Spotify Client ID is formatted correctly (32 hex characters)
+   */
+  isValidClientId(clientId) {
+    if (!clientId) return false;
+    const clean = clientId.trim();
+    // Spotify Client IDs are 32-character hex strings
+    return /^[a-fA-F0-9]{32}$/.test(clean);
+  },
+
   /**
    * Initiates real Spotify OAuth 2.0 Authorization Code Flow with PKCE
    */
-  async login(clientId = DEFAULT_CLIENT_IDS.spotify) {
+  async login(clientId) {
+    if (!this.isValidClientId(clientId)) {
+      return { success: false, reason: 'INVALID_CLIENT_ID' };
+    }
+
     const redirectUri = window.location.origin + window.location.pathname;
     const verifier = PKCEHelper.generateRandomString(64);
     const challenge = await PKCEHelper.generateCodeChallenge(verifier);
 
     // Save PKCE verifier to sessionStorage for callback token exchange
     sessionStorage.setItem('spotify_pkce_verifier', verifier);
-    sessionStorage.setItem('spotify_client_id', clientId);
+    sessionStorage.setItem('spotify_client_id', clientId.trim());
 
     const scopes = [
       'user-read-private',
@@ -52,7 +59,7 @@ export const SpotifyOAuth = {
 
     const authUrl = `https://accounts.spotify.com/authorize?` +
       `response_type=code` +
-      `&client_id=${encodeURIComponent(clientId)}` +
+      `&client_id=${encodeURIComponent(clientId.trim())}` +
       `&scope=${encodeURIComponent(scopes)}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&code_challenge_method=S256` +
@@ -60,6 +67,7 @@ export const SpotifyOAuth = {
 
     // Redirect user to official Spotify Authorization page
     window.location.href = authUrl;
+    return { success: true };
   },
 
   /**
@@ -67,11 +75,11 @@ export const SpotifyOAuth = {
    */
   async handleCallback(code) {
     const verifier = sessionStorage.getItem('spotify_pkce_verifier');
-    const clientId = sessionStorage.getItem('spotify_client_id') || DEFAULT_CLIENT_IDS.spotify;
+    const clientId = sessionStorage.getItem('spotify_client_id');
     const redirectUri = window.location.origin + window.location.pathname;
 
-    if (!verifier) {
-      console.warn('Missing PKCE verifier in session storage');
+    if (!verifier || !clientId) {
+      console.warn('Missing PKCE verifier or Client ID in session storage');
       return null;
     }
 
@@ -100,7 +108,7 @@ export const SpotifyOAuth = {
         profile: realProfile
       };
     } catch (err) {
-      console.error('Spotify OAuth Error:', err);
+      console.error('Spotify OAuth Token Exchange Error:', err);
       return null;
     }
   },
@@ -132,7 +140,7 @@ export const SpotifyOAuth = {
         isRealOAuth: true
       };
     } catch (e) {
-      console.warn('Real Spotify profile fetch failed, using fallback authenticated profile:', e);
+      console.warn('Real Spotify profile fetch failed, using authenticated fallback profile:', e);
       return {
         platform: 'Spotify',
         platformId: 'spotify',
@@ -153,7 +161,9 @@ export const SoundCloudOAuth = {
   /**
    * Initiates real SoundCloud OAuth flow
    */
-  login(clientId = DEFAULT_CLIENT_IDS.soundcloud) {
+  login(clientId) {
+    if (!clientId) return { success: false, reason: 'INVALID_CLIENT_ID' };
+
     const redirectUri = window.location.origin + window.location.pathname;
     sessionStorage.setItem('soundcloud_client_id', clientId);
 
@@ -163,6 +173,7 @@ export const SoundCloudOAuth = {
       `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
     window.location.href = authUrl;
+    return { success: true };
   },
 
   /**
@@ -208,10 +219,6 @@ export const AppleMusicAuth = {
    * Authorizes real Apple Music subscriber using MusicKit JS SDK
    */
   async login(devToken = '') {
-    if (typeof MusicKit === 'undefined') {
-      console.warn('MusicKit JS SDK loading...');
-    }
-
     try {
       if (window.MusicKit) {
         const musicKit = await window.MusicKit.configure({

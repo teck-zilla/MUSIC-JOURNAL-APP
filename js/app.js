@@ -10,7 +10,7 @@ import { Player } from './player.js';
 import { Journal } from './journal.js';
 import { RecommendationEngine } from './recommendation.js';
 import { Analytics } from './analytics.js';
-import { SpotifyOAuth, SoundCloudOAuth, AppleMusicAuth, AudiomackAuth, DEFAULT_CLIENT_IDS } from './oauth.js';
+import { SpotifyOAuth, SoundCloudOAuth, AppleMusicAuth, AudiomackAuth } from './oauth.js';
 
 class AppController {
   constructor() {
@@ -35,6 +35,7 @@ class AppController {
     this.bindNavigation();
     this.bindSearch();
     this.bindAuthEvents();
+    this.bindSpotifySetupModal();
     this.bindPlatformModal();
     this.bindBackupDataEvents();
 
@@ -267,13 +268,21 @@ class AppController {
     if (soundcloudKeyInput) soundcloudKeyInput.addEventListener('change', saveCreds);
     if (appleDevTokenInput) appleDevTokenInput.addEventListener('change', saveCreds);
 
-    // 1. Real Spotify OAuth Login Trigger
+    // 1. Real Spotify OAuth Login Trigger with Client ID Guard
     if (btnSpotifyReal) {
-      btnSpotifyReal.addEventListener('click', () => {
+      btnSpotifyReal.addEventListener('click', async () => {
         const creds = saveCreds();
-        const clientId = creds.spotifyClientId || DEFAULT_CLIENT_IDS.spotify;
+        const clientId = creds.spotifyClientId;
+
+        if (!SpotifyOAuth.isValidClientId(clientId)) {
+          // Open Spotify Client ID Setup Prompt modal instead of showing Spotify invalid_client error page!
+          if (loginModal) loginModal.classList.remove('active');
+          this.openSpotifySetupModal();
+          return;
+        }
+
         this.showToast('Redirecting to Spotify Authorization...');
-        SpotifyOAuth.login(clientId);
+        await SpotifyOAuth.login(clientId);
       });
     }
 
@@ -306,7 +315,13 @@ class AppController {
     if (btnSoundcloudReal) {
       btnSoundcloudReal.addEventListener('click', () => {
         const creds = saveCreds();
-        const clientId = creds.soundcloudKey || DEFAULT_CLIENT_IDS.soundcloud;
+        const clientId = creds.soundcloudKey;
+
+        if (!clientId) {
+          this.showToast('Please enter your SoundCloud Client Key below or use instant login');
+          return;
+        }
+
         this.showToast('Connecting to SoundCloud...');
         SoundCloudOAuth.login(clientId);
       });
@@ -320,6 +335,71 @@ class AppController {
         if (loginModal) loginModal.classList.add('active');
         this.updatePlatformUI();
         this.showToast('Logged out of platform session');
+      });
+    }
+  }
+
+  openSpotifySetupModal() {
+    const setupModal = document.getElementById('spotifySetupModal');
+    const redirectInput = document.getElementById('redirectUriDisplayInput');
+    const currentRedirectUri = window.location.origin + window.location.pathname;
+
+    if (redirectInput) redirectInput.value = currentRedirectUri;
+    if (setupModal) setupModal.classList.add('active');
+  }
+
+  bindSpotifySetupModal() {
+    const setupModal = document.getElementById('spotifySetupModal');
+    const btnClose = document.getElementById('btnCloseSpotifySetupModal');
+    const form = document.getElementById('spotifyClientIdForm');
+    const input = document.getElementById('promptSpotifyClientId');
+    const btnCopy = document.getElementById('btnCopyRedirectUri');
+    const btnDemo = document.getElementById('btnUseDemoSpotifyProfile');
+
+    if (btnClose && setupModal) {
+      btnClose.addEventListener('click', () => setupModal.classList.remove('active'));
+    }
+
+    if (btnCopy) {
+      btnCopy.addEventListener('click', () => {
+        const currentRedirectUri = window.location.origin + window.location.pathname;
+        navigator.clipboard.writeText(currentRedirectUri).then(() => {
+          this.showToast('Redirect URI copied to clipboard!');
+        }).catch(() => {
+          this.showToast('Redirect URI: ' + currentRedirectUri);
+        });
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const enteredId = input ? input.value.trim() : '';
+
+        if (!SpotifyOAuth.isValidClientId(enteredId)) {
+          alert('Spotify Client IDs must be exactly 32 hexadecimal characters (0-9, a-f). Please check your entry from Spotify Developer Dashboard.');
+          return;
+        }
+
+        const creds = StorageManager.getApiCredentials();
+        creds.spotifyClientId = enteredId;
+        StorageManager.saveApiCredentials(creds);
+
+        const customInput = document.getElementById('customSpotifyClientId');
+        if (customInput) customInput.value = enteredId;
+
+        if (setupModal) setupModal.classList.remove('active');
+        this.showToast('Saved Client ID! Redirecting to Spotify...');
+        await SpotifyOAuth.login(enteredId);
+      });
+    }
+
+    if (btnDemo) {
+      btnDemo.addEventListener('click', () => {
+        const userProfile = StorageManager.loginPlatform('spotify');
+        this.updatePlatformUI();
+        if (setupModal) setupModal.classList.remove('active');
+        this.showToast(`Logged in as ${userProfile.displayName} (Spotify Demo Profile)!`);
       });
     }
   }

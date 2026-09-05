@@ -319,6 +319,48 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: SPOTIFY CLIENT ID SETUP & GUIDANCE ================= -->
+  <div id="spotifySetupModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title" style="color: #1db954; display: flex; align-items: center; gap: 8px;">
+          <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24"><path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm5.521 17.341c-.218.359-.683.473-1.04.254-2.855-1.745-6.452-2.14-10.685-1.173-.408.093-.815-.164-.908-.572-.093-.408.164-.815.572-.908 4.634-1.06 8.599-.607 11.807 1.359.358.218.473.683.254 1.04zm1.479-3.284c-.274.446-.86.588-1.306.314-3.267-2.008-8.249-2.59-12.115-1.417-.5.152-1.034-.135-1.186-.635-.152-.5.135-1.034.635-1.186 4.417-1.34 9.91-.689 13.658 1.612.446.274.588.86.314 1.306zm.126-3.416C15.228 8.441 8.8 8.228 5.124 9.344c-.612.186-1.258-.168-1.444-.78-.186-.612.168-1.258.78-1.444 4.225-1.282 11.315-1.026 15.753 1.609.55.326.732 1.037.406 1.587-.326.55-1.037.732-1.587.406z"/></svg>
+          <span>Spotify Client ID Required</span>
+        </h2>
+        <button id="btnCloseSpotifySetupModal" class="btn-close">&times;</button>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-sub); line-height: 1.5;">
+        Spotify requires a valid 32-character Client ID from your Spotify Developer Dashboard to authenticate on their official servers.
+      </p>
+
+      <div style="background: rgba(29, 185, 84, 0.08); border: 1px solid rgba(29, 185, 84, 0.2); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+        <h4 style="font-size: 0.88rem; font-weight: 700; color: #1db954;">Quick Setup (3 Simple Steps):</h4>
+        <ol style="font-size: 0.82rem; color: var(--text-sub); padding-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+          <li>Log in to <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: #1db954; text-decoration: underline;">developer.spotify.com/dashboard</a></li>
+          <li>Create an App and add this exact Redirect URI:</li>
+        </ol>
+        
+        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+          <input type="text" id="redirectUriDisplayInput" readonly class="form-input" style="font-size: 0.78rem; padding: 6px 10px; background: #000;" value="">
+          <button id="btnCopyRedirectUri" class="btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; white-space: nowrap;">Copy URI</button>
+        </div>
+      </div>
+
+      <form id="spotifyClientIdForm" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label" for="promptSpotifyClientId">Paste Your Spotify Client ID</label>
+          <input type="text" id="promptSpotifyClientId" class="form-input" placeholder="e.g. 3f92a1b4c6d8e0f1a2b3c4d5e6f7a8b9" required style="font-family: monospace;">
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn-primary" style="flex: 1; justify-content: center;">Save & Connect Spotify</button>
+          <button type="button" id="btnUseDemoSpotifyProfile" class="btn-secondary" style="white-space: nowrap;">Use Demo Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= MODAL: CREATE JOURNAL ENTRY ================= -->
   <div id="journalModal" class="modal-overlay">
     <div class="modal-card">
