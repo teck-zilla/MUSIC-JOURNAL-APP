@@ -39,6 +39,7 @@ class AppController {
     RecommendationEngine.render();
     Analytics.render();
     this.updatePlatformUI();
+    this.loadSavedApiCredentials();
 
     console.log('Spotify Music Journal App Initialized Successfully!');
   }
@@ -144,7 +145,7 @@ class AppController {
             card.addEventListener('click', (e) => {
               if (e.target.closest('.btn-log-track')) {
                 e.stopPropagation();
-                Journal.openModalForTrack(track);
+                this.checkAuthAndOpenJournal(track);
                 return;
               }
               Player.playTrack(track);
@@ -155,6 +156,17 @@ class AppController {
     });
   }
 
+  checkAuthAndOpenJournal(track) {
+    const user = StorageManager.getAuthUser();
+    if (!user.isLoggedIn) {
+      this.showToast('Please log in to your platform profile to create journal entries');
+      const loginModal = document.getElementById('loginModal');
+      if (loginModal) loginModal.classList.add('active');
+      return;
+    }
+    Journal.openModalForTrack(track);
+  }
+
   bindAuthEvents() {
     const profileBtn = document.getElementById('userProfileBtn');
     const dropdown = document.getElementById('userProfileDropdown');
@@ -163,6 +175,9 @@ class AppController {
     const btnCloseLogin = document.getElementById('btnCloseLoginModal');
     const btnLogout = document.getElementById('btnLogout');
     const authPlatformBtns = document.querySelectorAll('.btn-auth-platform');
+
+    const spotifyClientInput = document.getElementById('customSpotifyClientId');
+    const soundcloudKeyInput = document.getElementById('customSoundcloudKey');
 
     // Header Profile Dropdown Toggle
     if (profileBtn && dropdown) {
@@ -192,9 +207,22 @@ class AppController {
       });
     }
 
+    // Save Custom API Credentials on Input Change
+    const saveCreds = () => {
+      const creds = {
+        spotifyClientId: spotifyClientInput ? spotifyClientInput.value.trim() : '',
+        soundcloudKey: soundcloudKeyInput ? soundcloudKeyInput.value.trim() : ''
+      };
+      StorageManager.saveApiCredentials(creds);
+    };
+
+    if (spotifyClientInput) spotifyClientInput.addEventListener('change', saveCreds);
+    if (soundcloudKeyInput) soundcloudKeyInput.addEventListener('change', saveCreds);
+
     // Platform Auth Buttons (Spotify, Apple Music, Audiomack, SoundCloud)
     authPlatformBtns.forEach(btn => {
       btn.addEventListener('click', () => {
+        saveCreds();
         const platformId = btn.dataset.authPlatform;
         const userProfile = StorageManager.loginPlatform(platformId);
         
@@ -204,7 +232,7 @@ class AppController {
       });
     });
 
-    // Logout
+    // Logout Action
     if (btnLogout) {
       btnLogout.addEventListener('click', () => {
         StorageManager.logoutUser();
@@ -216,6 +244,15 @@ class AppController {
     }
   }
 
+  loadSavedApiCredentials() {
+    const creds = StorageManager.getApiCredentials();
+    const spotifyInput = document.getElementById('customSpotifyClientId');
+    const soundcloudInput = document.getElementById('customSoundcloudKey');
+
+    if (spotifyInput && creds.spotifyClientId) spotifyInput.value = creds.spotifyClientId;
+    if (soundcloudInput && creds.soundcloudKey) soundcloudInput.value = creds.soundcloudKey;
+  }
+
   bindPlatformModal() {
     const btnConnect = document.getElementById('btnOpenPlatformModal');
     const modal = document.getElementById('platformModal');
@@ -223,7 +260,15 @@ class AppController {
     const platformBtns = document.querySelectorAll('.btn-platform-option');
 
     if (btnConnect && modal) {
-      btnConnect.addEventListener('click', () => modal.classList.add('active'));
+      btnConnect.addEventListener('click', () => {
+        const user = StorageManager.getAuthUser();
+        if (!user.isLoggedIn) {
+          const loginModal = document.getElementById('loginModal');
+          if (loginModal) loginModal.classList.add('active');
+        } else {
+          modal.classList.add('active');
+        }
+      });
     }
 
     if (btnClose && modal) {
@@ -252,14 +297,19 @@ class AppController {
     const dropdownName = document.getElementById('dropdownDisplayName');
     const dropdownHandle = document.getElementById('dropdownHandle');
 
-    if (nameElem) nameElem.textContent = user.displayName || 'Guest User';
+    if (nameElem) nameElem.textContent = user.isLoggedIn ? (user.displayName || 'Guest User') : 'Guest User';
     if (avatarImg && user.avatar) avatarImg.src = user.avatar;
-    if (dropdownName) dropdownName.textContent = user.displayName || 'Guest User';
-    if (dropdownHandle) dropdownHandle.textContent = user.handle || '@music_lover';
+    if (dropdownName) dropdownName.textContent = user.isLoggedIn ? (user.displayName || 'Guest User') : 'Guest User';
+    if (dropdownHandle) dropdownHandle.textContent = user.isLoggedIn ? (user.handle || '@music_lover') : 'Logged Out';
 
     if (badgeTag) {
-      badgeTag.textContent = user.platform || 'Spotify';
-      badgeTag.className = `user-platform-tag ${user.badgeClass || 'spotify'}`;
+      if (user.isLoggedIn) {
+        badgeTag.textContent = user.platform || 'Spotify';
+        badgeTag.className = `user-platform-tag ${user.badgeClass || 'spotify'}`;
+      } else {
+        badgeTag.textContent = 'Log In';
+        badgeTag.className = 'user-platform-tag logged-out';
+      }
     }
 
     // 2. Sidebar Platform Status Card
@@ -267,11 +317,15 @@ class AppController {
     const platformHandleText = document.getElementById('platformHandleText');
     const statusDot = document.getElementById('platformStatusBadge');
 
-    if (platformNameText) platformNameText.textContent = user.badge || `${user.platform} Connected`;
-    if (platformHandleText) platformHandleText.textContent = user.isLoggedIn ? user.handle : 'Logged Out';
+    if (platformNameText) {
+      platformNameText.textContent = user.isLoggedIn ? (user.badge || `${user.platform} Connected`) : 'Logged Out';
+    }
+    if (platformHandleText) {
+      platformHandleText.textContent = user.isLoggedIn ? user.handle : 'Click to Log In';
+    }
 
     if (statusDot) {
-      statusDot.className = `platform-badge ${user.isLoggedIn ? (user.badgeClass || 'connected') : ''}`;
+      statusDot.className = `platform-badge ${user.isLoggedIn ? (user.badgeClass || 'connected') : 'logged-out'}`;
     }
 
     // 3. Update Modal Platform Option Badges
@@ -292,7 +346,7 @@ class AppController {
 
     // 4. Update Journal Modal Default Platform Selector
     const platformSelect = document.getElementById('journalPlatformSelect');
-    if (platformSelect && user.platform) {
+    if (platformSelect && user.isLoggedIn && user.platform) {
       platformSelect.value = user.platform;
     }
   }
@@ -331,6 +385,7 @@ class AppController {
             RecommendationEngine.render();
             Analytics.render();
             this.updatePlatformUI();
+            this.loadSavedApiCredentials();
             this.showToast('Journal restored from backup!');
           } else {
             alert('Invalid backup JSON file.');
@@ -348,6 +403,7 @@ class AppController {
           RecommendationEngine.render();
           Analytics.render();
           this.updatePlatformUI();
+          this.loadSavedApiCredentials();
           this.showToast('Journal reset to default demo entries.');
         }
       });

@@ -407,6 +407,8 @@ a {
 .user-platform-tag.apple { background-color: var(--apple-color); color: #fff; }
 .user-platform-tag.audiomack { background-color: var(--audiomack-color); color: #000; }
 .user-platform-tag.soundcloud { background-color: var(--soundcloud-color); color: #fff; }
+.user-platform-tag.logged-out { background-color: rgba(255,255,255,0.12); color: var(--text-sub); }
+.platform-badge.logged-out { background-color: var(--text-muted); box-shadow: none; }
 
 .profile-dropdown-menu {
   position: absolute;

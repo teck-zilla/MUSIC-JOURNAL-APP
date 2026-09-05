@@ -8,7 +8,8 @@ const STORAGE_KEYS = {
   JOURNAL_ENTRIES: 'spotify_journal_entries_v1',
   CONNECTED_PLATFORM: 'spotify_journal_platform_v1',
   USER_PREFERENCES: 'spotify_journal_prefs_v1',
-  AUTH_USER: 'spotify_journal_auth_user_v2'
+  AUTH_USER: 'spotify_journal_auth_user_v2',
+  API_CREDENTIALS: 'spotify_journal_api_creds_v1'
 };
 
 // Preset User Profiles for Multi-Platform Login
@@ -183,16 +184,45 @@ export const StorageManager = {
   },
 
   /**
-   * Logs out current user session
+   * Logs out current user session cleanly
    */
   logoutUser() {
-    const current = this.getAuthUser();
     const loggedOutUser = {
-      ...current,
+      platform: 'None',
+      platformId: 'none',
+      displayName: 'Guest User',
+      handle: '@guest_user',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+      badge: 'Logged Out',
+      badgeClass: 'logged-out',
+      color: 'var(--text-sub)',
       isLoggedIn: false
     };
     this.saveAuthUser(loggedOutUser);
     return loggedOutUser;
+  },
+
+  /**
+   * Saves custom API Client credentials
+   */
+  saveApiCredentials(creds) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.API_CREDENTIALS, JSON.stringify(creds));
+    } catch (e) {
+      console.error('Failed to save API credentials:', e);
+    }
+  },
+
+  /**
+   * Gets custom API credentials
+   */
+  getApiCredentials() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.API_CREDENTIALS);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      return {};
+    }
   },
 
   /**
@@ -277,7 +307,8 @@ export const StorageManager = {
       version: '2.0',
       exportedAt: new Date().toISOString(),
       entries: this.getEntries(),
-      authUser: this.getAuthUser()
+      authUser: this.getAuthUser(),
+      apiCreds: this.getApiCredentials()
     };
     return JSON.stringify(payload, null, 2);
   },
@@ -294,6 +325,9 @@ export const StorageManager = {
       if (data.authUser) {
         this.saveAuthUser(data.authUser);
       }
+      if (data.apiCreds) {
+        this.saveApiCredentials(data.apiCreds);
+      }
       return true;
     } catch (e) {
       console.error('Import failed:', e);
@@ -307,6 +341,7 @@ export const StorageManager = {
   resetToDefaults() {
     localStorage.removeItem(STORAGE_KEYS.JOURNAL_ENTRIES);
     localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    localStorage.removeItem(STORAGE_KEYS.API_CREDENTIALS);
     this.init();
   }
 };
