@@ -49,13 +49,30 @@ Spotify Dark Vibe Interface:
 Spotify signature color palette (#121212, #181818, #1DB954), sidebar navigation, hero section, responsive cards, and fixed bottom audio player bar with Web Audio API canvas visualizer.
 
 
-Future Improvements
+## 🚀 Recent Updates & Changelog
+
+### 1. Multi-Platform Authentication & OAuth 2.0 PKCE
+- **Spotify OAuth 2.0 with PKCE**: Implemented RFC 7636 PKCE flow for client-side authentication without requiring a backend server.
+- **Client ID Validation & Guidance**: Added automated validation for Spotify Client IDs (32-character hex validation) and an interactive setup modal guiding users through Spotify Developer Dashboard configuration and redirect URI setup (`http://127.0.0.1:5500`, etc.).
+- **Multi-Platform Support**: Added profile login and integration support for Apple Music, Audiomack, and SoundCloud alongside Spotify.
+- **Instant Demo Fallback**: One-click demo mode allows testing all platform features immediately without API credentials.
+
+### 2. Session Management & Auth Safeguards
+- **Persistent Credentials**: Securely persists session tokens and user platform credentials in `localStorage`.
+- **Dynamic Profile UI**: Real-time reactive updates for user avatar, platform badge, connection status, and logout actions.
+- **Journaling Auth Gate**: Prompts unauthenticated guests to connect an account or enter demo mode before journaling.
+
+### 3. Architecture, Specifications & Styling Enhancements
+- **Agent Governance & Specifications**: Added `AGENTS.md` and `.agents/rules/` defining system architecture, data models, privacy boundaries, offline caching policies, and database safety rules.
+- **Modern CSS & Standards**: Cleaned up vendor prefixes for `background-clip` and `line-clamp` for standards compliance and seamless cross-browser rendering.
+
+---
+
+## 🔮 Future Improvements
 
 Future versions of Music Journal could include:
 
-Music statistics
-Show information such as favourite artists, genres, and listening trends.
-Recommendations
-Suggest new music based on the user's ratings and journal history.
-Improved personalisation
-Allow users to customize their profile, themes, and journal.
+- **Music statistics**: Show detailed information such as favourite artists, genres, and listening trends over time.
+- **Advanced Recommendations**: Vector-based taste recommendations matching personal journal entries.
+- **Customization**: Allow members to customize their profile, themes, and journal displays.
+
