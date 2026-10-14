@@ -3,3 +3,9 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Environment & Secrets (PRD NFR-3, security-and-secrets.md)
+.env
+.env.*
+!.env.example
+
