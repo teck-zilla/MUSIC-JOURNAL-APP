@@ -12,51 +12,59 @@ const STORAGE_KEYS = {
   API_CREDENTIALS: 'spotify_journal_api_creds_v1'
 };
 
-// Preset User Profiles for Multi-Platform Login
+// PRD Section 5.2 Data Model Platforms (AUDIOMACK & BANDCAMP retained in data model, hidden from UI)
+export const PRD_PLATFORMS = ['SPOTIFY', 'APPLE_MUSIC', 'YT_MUSIC', 'TIDAL', 'AUDIOMACK', 'BANDCAMP'];
+
+// PRD FR-7 to FR-10: Demo Connections for Spotify, Apple Music, YT Music, and Tidal
+// Every modal step says it is a demo, and every badge displays the word 'Demo'.
 const PLATFORM_PROFILES = {
   spotify: {
     platform: 'Spotify',
     platformId: 'spotify',
     displayName: 'Alex Vance',
-    handle: '@alexvance_sp',
+    handle: '@alexvance',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    badge: 'Spotify Premium',
+    badge: 'Spotify (Demo)',
     badgeClass: 'spotify',
     color: '#1db954',
-    isLoggedIn: true
+    isLoggedIn: true,
+    isDemo: true
   },
   apple: {
     platform: 'Apple Music',
     platformId: 'apple',
     displayName: 'Alex Vance',
-    handle: '@alexvance_am',
+    handle: '@alexvance',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-    badge: 'Apple Music Subscriber',
+    badge: 'Apple Music (Demo)',
     badgeClass: 'apple',
     color: '#fc3c44',
-    isLoggedIn: true
+    isLoggedIn: true,
+    isDemo: true
   },
-  audiomack: {
-    platform: 'Audiomack',
-    platformId: 'audiomack',
+  ytmusic: {
+    platform: 'YT Music',
+    platformId: 'ytmusic',
     displayName: 'Alex Vance',
-    handle: '@alexvance_amk',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
-    badge: 'Audiomack VIP',
-    badgeClass: 'audiomack',
-    color: '#ffa200',
-    isLoggedIn: true
+    handle: '@alexvance',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+    badge: 'YT Music (Demo)',
+    badgeClass: 'ytmusic',
+    color: '#ff0000',
+    isLoggedIn: true,
+    isDemo: true
   },
-  soundcloud: {
-    platform: 'SoundCloud',
-    platformId: 'soundcloud',
+  tidal: {
+    platform: 'Tidal',
+    platformId: 'tidal',
     displayName: 'Alex Vance',
-    handle: '@alexvance_sc',
+    handle: '@alexvance',
     avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80',
-    badge: 'SoundCloud Next Pro',
-    badgeClass: 'soundcloud',
-    color: '#ff5500',
-    isLoggedIn: true
+    badge: 'Tidal (Demo)',
+    badgeClass: 'tidal',
+    color: '#00ffff',
+    isLoggedIn: true,
+    isDemo: true
   }
 };
 
@@ -126,7 +134,7 @@ const INITIAL_SEED_ENTRIES = [
     moodLabel: '☕ Chill',
     context: 'Deep Focus Coding',
     note: 'Warm analogue synthesizers looping effortlessly. Kept me in the flow state for 3 hours straight.',
-    platform: 'SoundCloud',
+    platform: 'YT Music',
     createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
     isFavorite: true
   }

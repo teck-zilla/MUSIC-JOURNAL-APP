@@ -23,12 +23,11 @@
   --border-light: rgba(255, 255, 255, 0.1);
   --border-active: rgba(29, 185, 84, 0.5);
 
-  /* Platform Brand Colors */
+  /* Platform Brand Colors (PRD FR-7) */
   --spotify-color: #1db954;
   --apple-color: #fc3c44;
-  --audiomack-color: #ffa200;
-  --soundcloud-color: #ff5500;
-  --tidal-color: #00ffff;
+  --ytmusic-color: #ff0000;
+  --tidal-color: #00e5ff;
 
   /* Mood Gradients & Accents */
   --mood-energetic: linear-gradient(135deg, #ff416c, #ff4b2b);
@@ -246,8 +245,8 @@ a {
 
 .platform-badge.spotify { background-color: var(--spotify-color); box-shadow: 0 0 10px var(--spotify-color); }
 .platform-badge.apple { background-color: var(--apple-color); box-shadow: 0 0 10px var(--apple-color); }
-.platform-badge.audiomack { background-color: var(--audiomack-color); box-shadow: 0 0 10px var(--audiomack-color); }
-.platform-badge.soundcloud { background-color: var(--soundcloud-color); box-shadow: 0 0 10px var(--soundcloud-color); }
+.platform-badge.ytmusic { background-color: var(--ytmusic-color); box-shadow: 0 0 10px var(--ytmusic-color); }
+.platform-badge.tidal { background-color: var(--tidal-color); box-shadow: 0 0 10px var(--tidal-color); }
 
 .platform-info {
   display: flex;
@@ -406,8 +405,8 @@ a {
 
 .user-platform-tag.spotify { background-color: var(--spotify-color); color: #000; }
 .user-platform-tag.apple { background-color: var(--apple-color); color: #fff; }
-.user-platform-tag.audiomack { background-color: var(--audiomack-color); color: #000; }
-.user-platform-tag.soundcloud { background-color: var(--soundcloud-color); color: #fff; }
+.user-platform-tag.ytmusic { background-color: var(--ytmusic-color); color: #fff; }
+.user-platform-tag.tidal { background-color: var(--tidal-color); color: #000; }
 .user-platform-tag.logged-out { background-color: rgba(255,255,255,0.12); color: var(--text-sub); }
 .platform-badge.logged-out { background-color: var(--text-muted); box-shadow: none; }
 
@@ -1153,23 +1152,52 @@ a {
   box-shadow: 0 0 20px rgba(252, 60, 68, 0.4);
 }
 
-.btn-auth-audiomack {
-  background-color: #ffa200;
-  color: #000;
-}
-.btn-auth-audiomack:hover {
-  background-color: #ffb426;
-  box-shadow: 0 0 20px rgba(255, 162, 0, 0.4);
-}
-
-.btn-auth-soundcloud {
-  background-color: #ff5500;
+.btn-auth-ytmusic {
+  background-color: #ff0000;
   color: #fff;
 }
-.btn-auth-soundcloud:hover {
-  background-color: #ff6a1a;
-  box-shadow: 0 0 20px rgba(255, 85, 0, 0.4);
+.btn-auth-ytmusic:hover {
+  background-color: #ff2a2a;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
 }
+
+.btn-auth-tidal {
+  background-color: #000;
+  color: #00e5ff;
+  border-color: rgba(0, 229, 255, 0.4);
+}
+.btn-auth-tidal:hover {
+  background-color: #00e5ff;
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+}
+
+/* Demo Notice & Indicators (PRD FR-7, FR-8) */
+.demo-notice-box {
+  background: rgba(29, 185, 84, 0.08);
+  border: 1px solid rgba(29, 185, 84, 0.25);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-sub);
+}
+
+.demo-notice-box strong {
+  color: #1db954;
+}
+
+.demo-tag-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  color: var(--text-main);
+  letter-spacing: 0.5px;
+}
+
 
 /* Modal Form Controls */
 .form-group {

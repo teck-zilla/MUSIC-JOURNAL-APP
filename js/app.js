@@ -1,7 +1,7 @@
 /**
  * SPOTIFY MUSIC JOURNAL - MAIN APP CONTROLLER
- * Initializes components, real OAuth 2.0 streaming platform authentication (Spotify, Apple Music, Audiomack, SoundCloud),
- * view switching, live search handlers, streaming platform connections, and toast notifications.
+ * Initializes components, PRD-compliant demo streaming platform connections (Spotify, Apple Music, YT Music, Tidal),
+ * view switching, live search handlers, and toast notifications.
  */
 
 import { StorageManager } from './storage.js';
@@ -10,7 +10,6 @@ import { Player } from './player.js';
 import { Journal } from './journal.js';
 import { RecommendationEngine } from './recommendation.js';
 import { Analytics } from './analytics.js';
-import { SpotifyOAuth, SoundCloudOAuth, AppleMusicAuth, AudiomackAuth } from './oauth.js';
 
 class AppController {
   constructor() {
@@ -28,61 +27,22 @@ class AppController {
     RecommendationEngine.init();
     Analytics.init();
 
-    // 3. Check for Real OAuth Callback Redirects (?code= or #access_token=)
-    await this.handleOAuthRedirectCallback();
-
-    // 4. Bind UI Events & Navigation
+    // 3. Bind UI Events & Navigation
     this.bindNavigation();
     this.bindSearch();
     this.bindAuthEvents();
-    this.bindSpotifySetupModal();
     this.bindPlatformModal();
     this.bindBackupDataEvents();
 
-    // 5. Initial Renders
+    // 4. Initial Renders
     Journal.render();
     RecommendationEngine.render();
     Analytics.render();
     this.updatePlatformUI();
-    this.loadSavedApiCredentials();
 
-    console.log('Spotify Music Journal App Initialized Successfully!');
+    console.log('Spotify Music Journal App Initialized Successfully (PRD FR-7 to FR-10 Compliant)!');
   }
 
-  /**
-   * Auto-detects and processes OAuth callback parameters from Spotify / SoundCloud redirects
-   */
-  async handleOAuthRedirectCallback() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const hash = window.location.hash;
-
-    // 1. Spotify OAuth 2.0 Authorization Code Callback
-    if (code) {
-      this.showToast('Authenticating with Spotify...');
-      const res = await SpotifyOAuth.handleCallback(code);
-      if (res && res.profile) {
-        StorageManager.saveAuthUser(res.profile);
-        this.updatePlatformUI();
-        this.showToast(`Authenticated as ${res.profile.displayName} on Spotify!`);
-      }
-      // Clean query string from browser address bar
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    // 2. SoundCloud OAuth Token Callback
-    else if (hash && hash.includes('access_token')) {
-      const hashParams = new URLSearchParams(hash.replace('#', '?'));
-      const accessToken = hashParams.get('access_token');
-      if (accessToken) {
-        this.showToast('Authenticating with SoundCloud...');
-        const profile = await SoundCloudOAuth.fetchProfile(accessToken);
-        StorageManager.saveAuthUser(profile);
-        this.updatePlatformUI();
-        this.showToast(`Authenticated as ${profile.displayName} on SoundCloud!`);
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-  }
 
   bindNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
@@ -199,9 +159,9 @@ class AppController {
   checkAuthAndOpenJournal(track) {
     const user = StorageManager.getAuthUser();
     if (!user.isLoggedIn) {
-      this.showToast('Please log in to your platform profile to create journal entries');
-      const loginModal = document.getElementById('loginModal');
-      if (loginModal) loginModal.classList.add('active');
+      this.showToast('Please select a streaming platform demo connection to journal');
+      const modal = document.getElementById('platformModal');
+      if (modal) modal.classList.add('active');
       return;
     }
     Journal.openModalForTrack(track);
@@ -210,20 +170,9 @@ class AppController {
   bindAuthEvents() {
     const profileBtn = document.getElementById('userProfileBtn');
     const dropdown = document.getElementById('userProfileDropdown');
-    const loginModal = document.getElementById('loginModal');
     const btnOpenLogin = document.getElementById('btnOpenLoginModal');
-    const btnCloseLogin = document.getElementById('btnCloseLoginModal');
     const btnLogout = document.getElementById('btnLogout');
-
-    // Real OAuth Buttons
-    const btnSpotifyReal = document.getElementById('btnRealSpotifyLogin');
-    const btnAppleReal = document.getElementById('btnRealAppleLogin');
-    const btnAudiomackReal = document.getElementById('btnRealAudiomackLogin');
-    const btnSoundcloudReal = document.getElementById('btnRealSoundcloudLogin');
-
-    const spotifyClientInput = document.getElementById('customSpotifyClientId');
-    const soundcloudKeyInput = document.getElementById('customSoundcloudKey');
-    const appleDevTokenInput = document.getElementById('customAppleDevToken');
+    const platformModal = document.getElementById('platformModal');
 
     // Header Profile Dropdown Toggle
     if (profileBtn && dropdown) {
@@ -239,204 +188,55 @@ class AppController {
       });
     }
 
-    // Modal Open/Close
-    if (btnOpenLogin && loginModal) {
+    // Modal Trigger from Dropdown
+    if (btnOpenLogin && platformModal) {
       btnOpenLogin.addEventListener('click', () => {
-        loginModal.classList.add('active');
+        platformModal.classList.add('active');
         if (dropdown) dropdown.classList.remove('active');
       });
     }
 
-    if (btnCloseLogin && loginModal) {
-      btnCloseLogin.addEventListener('click', () => {
-        loginModal.classList.remove('active');
-      });
-    }
-
-    // Save Custom API Credentials on Input Change
-    const saveCreds = () => {
-      const creds = {
-        spotifyClientId: spotifyClientInput ? spotifyClientInput.value.trim() : '',
-        soundcloudKey: soundcloudKeyInput ? soundcloudKeyInput.value.trim() : '',
-        appleDevToken: appleDevTokenInput ? appleDevTokenInput.value.trim() : ''
-      };
-      StorageManager.saveApiCredentials(creds);
-      return creds;
-    };
-
-    if (spotifyClientInput) spotifyClientInput.addEventListener('change', saveCreds);
-    if (soundcloudKeyInput) soundcloudKeyInput.addEventListener('change', saveCreds);
-    if (appleDevTokenInput) appleDevTokenInput.addEventListener('change', saveCreds);
-
-    // 1. Real Spotify OAuth Login Trigger with Client ID Guard
-    if (btnSpotifyReal) {
-      btnSpotifyReal.addEventListener('click', async () => {
-        const creds = saveCreds();
-        const clientId = creds.spotifyClientId;
-
-        if (!SpotifyOAuth.isValidClientId(clientId)) {
-          // Open Spotify Client ID Setup Prompt modal instead of showing Spotify invalid_client error page!
-          if (loginModal) loginModal.classList.remove('active');
-          this.openSpotifySetupModal();
-          return;
-        }
-
-        this.showToast('Redirecting to Spotify Authorization...');
-        await SpotifyOAuth.login(clientId);
-      });
-    }
-
-    // 2. Real Apple MusicKit Login Trigger
-    if (btnAppleReal) {
-      btnAppleReal.addEventListener('click', async () => {
-        const creds = saveCreds();
-        this.showToast('Launching Apple Music authorization...');
-        const userProfile = await AppleMusicAuth.login(creds.appleDevToken);
-        StorageManager.saveAuthUser(userProfile);
-        this.updatePlatformUI();
-        if (loginModal) loginModal.classList.remove('active');
-        this.showToast(`Logged in as ${userProfile.displayName} on Apple Music!`);
-      });
-    }
-
-    // 3. Real Audiomack Login Trigger
-    if (btnAudiomackReal) {
-      btnAudiomackReal.addEventListener('click', async () => {
-        this.showToast('Connecting to Audiomack account...');
-        const userProfile = await AudiomackAuth.login();
-        StorageManager.saveAuthUser(userProfile);
-        this.updatePlatformUI();
-        if (loginModal) loginModal.classList.remove('active');
-        this.showToast(`Logged in as ${userProfile.displayName} on Audiomack!`);
-      });
-    }
-
-    // 4. Real SoundCloud OAuth Login Trigger
-    if (btnSoundcloudReal) {
-      btnSoundcloudReal.addEventListener('click', () => {
-        const creds = saveCreds();
-        const clientId = creds.soundcloudKey;
-
-        if (!clientId) {
-          this.showToast('Please enter your SoundCloud Client Key below or use instant login');
-          return;
-        }
-
-        this.showToast('Connecting to SoundCloud...');
-        SoundCloudOAuth.login(clientId);
-      });
-    }
-
-    // Logout Action
+    // Disconnect Action (PRD FR-10)
     if (btnLogout) {
       btnLogout.addEventListener('click', () => {
         StorageManager.logoutUser();
         if (dropdown) dropdown.classList.remove('active');
-        if (loginModal) loginModal.classList.add('active');
         this.updatePlatformUI();
-        this.showToast('Logged out of platform session');
+        this.showToast('Disconnected demo platform session');
       });
     }
-  }
-
-  openSpotifySetupModal() {
-    const setupModal = document.getElementById('spotifySetupModal');
-    const redirectInput = document.getElementById('redirectUriDisplayInput');
-    const currentRedirectUri = window.location.origin + window.location.pathname;
-
-    if (redirectInput) redirectInput.value = currentRedirectUri;
-    if (setupModal) setupModal.classList.add('active');
-  }
-
-  bindSpotifySetupModal() {
-    const setupModal = document.getElementById('spotifySetupModal');
-    const btnClose = document.getElementById('btnCloseSpotifySetupModal');
-    const form = document.getElementById('spotifyClientIdForm');
-    const input = document.getElementById('promptSpotifyClientId');
-    const btnCopy = document.getElementById('btnCopyRedirectUri');
-    const btnDemo = document.getElementById('btnUseDemoSpotifyProfile');
-
-    if (btnClose && setupModal) {
-      btnClose.addEventListener('click', () => setupModal.classList.remove('active'));
-    }
-
-    if (btnCopy) {
-      btnCopy.addEventListener('click', () => {
-        const currentRedirectUri = window.location.origin + window.location.pathname;
-        navigator.clipboard.writeText(currentRedirectUri).then(() => {
-          this.showToast('Redirect URI copied to clipboard!');
-        }).catch(() => {
-          this.showToast('Redirect URI: ' + currentRedirectUri);
-        });
-      });
-    }
-
-    if (form) {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const enteredId = input ? input.value.trim() : '';
-
-        if (!SpotifyOAuth.isValidClientId(enteredId)) {
-          alert('Spotify Client IDs must be exactly 32 hexadecimal characters (0-9, a-f). Please check your entry from Spotify Developer Dashboard.');
-          return;
-        }
-
-        const creds = StorageManager.getApiCredentials();
-        creds.spotifyClientId = enteredId;
-        StorageManager.saveApiCredentials(creds);
-
-        const customInput = document.getElementById('customSpotifyClientId');
-        if (customInput) customInput.value = enteredId;
-
-        if (setupModal) setupModal.classList.remove('active');
-        this.showToast('Saved Client ID! Redirecting to Spotify...');
-        await SpotifyOAuth.login(enteredId);
-      });
-    }
-
-    if (btnDemo) {
-      btnDemo.addEventListener('click', () => {
-        const userProfile = StorageManager.loginPlatform('spotify');
-        this.updatePlatformUI();
-        if (setupModal) setupModal.classList.remove('active');
-        this.showToast(`Logged in as ${userProfile.displayName} (Spotify Demo Profile)!`);
-      });
-    }
-  }
-
-  loadSavedApiCredentials() {
-    const creds = StorageManager.getApiCredentials();
-    const spotifyInput = document.getElementById('customSpotifyClientId');
-    const soundcloudInput = document.getElementById('customSoundcloudKey');
-    const appleInput = document.getElementById('customAppleDevToken');
-
-    if (spotifyInput && creds.spotifyClientId) spotifyInput.value = creds.spotifyClientId;
-    if (soundcloudInput && creds.soundcloudKey) soundcloudInput.value = creds.soundcloudKey;
-    if (appleInput && creds.appleDevToken) appleInput.value = creds.appleDevToken;
   }
 
   bindPlatformModal() {
     const btnConnect = document.getElementById('btnOpenPlatformModal');
     const modal = document.getElementById('platformModal');
     const btnClose = document.getElementById('btnClosePlatformModal');
+    const btnDisconnectModal = document.getElementById('btnDisconnectDemo');
     const platformBtns = document.querySelectorAll('.btn-platform-option');
 
+    // Open Modal from Sidebar
     if (btnConnect && modal) {
       btnConnect.addEventListener('click', () => {
-        const user = StorageManager.getAuthUser();
-        if (!user.isLoggedIn) {
-          const loginModal = document.getElementById('loginModal');
-          if (loginModal) loginModal.classList.add('active');
-        } else {
-          modal.classList.add('active');
-        }
+        modal.classList.add('active');
       });
     }
 
+    // Close Modal
     if (btnClose && modal) {
       btnClose.addEventListener('click', () => modal.classList.remove('active'));
     }
 
+    // Disconnect from inside Modal (PRD FR-10)
+    if (btnDisconnectModal) {
+      btnDisconnectModal.addEventListener('click', () => {
+        StorageManager.logoutUser();
+        this.updatePlatformUI();
+        if (modal) modal.classList.remove('active');
+        this.showToast('Disconnected from demo platform');
+      });
+    }
+
+    // Connect / Switch Demo Platform (PRD FR-7 to FR-10)
     platformBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const platformId = btn.dataset.platformId;
@@ -444,7 +244,7 @@ class AppController {
 
         this.updatePlatformUI();
         if (modal) modal.classList.remove('active');
-        this.showToast(`Switched active profile to ${userProfile.platform}!`);
+        this.showToast(`Connected to ${userProfile.platform} (Demo)!`);
       });
     });
   }
@@ -452,61 +252,61 @@ class AppController {
   updatePlatformUI() {
     const user = StorageManager.getAuthUser();
 
-    // 1. Top Header User Profile Widget
+    // 1. Top Header User Profile Widget (PRD FR-9)
     const nameElem = document.getElementById('userNameText');
     const avatarImg = document.getElementById('userAvatarImg');
     const badgeTag = document.getElementById('userPlatformBadge');
     const dropdownName = document.getElementById('dropdownDisplayName');
     const dropdownHandle = document.getElementById('dropdownHandle');
 
-    if (nameElem) nameElem.textContent = user.isLoggedIn ? (user.displayName || 'Guest User') : 'Guest User';
+    if (nameElem) nameElem.textContent = user.isLoggedIn ? (user.displayName || 'Alex Vance') : 'Guest User';
     if (avatarImg && user.avatar) avatarImg.src = user.avatar;
-    if (dropdownName) dropdownName.textContent = user.isLoggedIn ? (user.displayName || 'Guest User') : 'Guest User';
-    if (dropdownHandle) dropdownHandle.textContent = user.isLoggedIn ? (user.handle || '@music_lover') : 'Logged Out';
+    if (dropdownName) dropdownName.textContent = user.isLoggedIn ? (user.displayName || 'Alex Vance') : 'Guest User';
+    if (dropdownHandle) dropdownHandle.textContent = user.isLoggedIn ? (user.handle || '@alexvance') : 'Logged Out';
 
     if (badgeTag) {
       if (user.isLoggedIn) {
-        badgeTag.textContent = user.platform || 'Spotify';
+        badgeTag.textContent = `${user.platform} (Demo)`;
         badgeTag.className = `user-platform-tag ${user.badgeClass || 'spotify'}`;
       } else {
-        badgeTag.textContent = 'Log In';
+        badgeTag.textContent = 'Demo (Disconnected)';
         badgeTag.className = 'user-platform-tag logged-out';
       }
     }
 
-    // 2. Sidebar Platform Status Card
+    // 2. Sidebar Platform Status Card (PRD FR-9)
     const platformNameText = document.getElementById('platformNameText');
     const platformHandleText = document.getElementById('platformHandleText');
     const statusDot = document.getElementById('platformStatusBadge');
 
     if (platformNameText) {
-      platformNameText.textContent = user.isLoggedIn ? (user.badge || `${user.platform} Connected`) : 'Logged Out';
+      platformNameText.textContent = user.isLoggedIn ? `${user.platform} (Demo)` : 'Not Connected (Demo)';
     }
     if (platformHandleText) {
-      platformHandleText.textContent = user.isLoggedIn ? user.handle : 'Click to Log In';
+      platformHandleText.textContent = user.isLoggedIn ? 'Demo Connection' : 'Click to Connect (Demo)';
     }
 
     if (statusDot) {
       statusDot.className = `platform-badge ${user.isLoggedIn ? (user.badgeClass || 'connected') : 'logged-out'}`;
     }
 
-    // 3. Update Modal Platform Option Badges
+    // 3. Update Modal Platform Option Badges (PRD FR-8, FR-9)
     const options = document.querySelectorAll('.btn-platform-option');
     options.forEach(opt => {
       const optId = opt.dataset.platformId;
       const statusSpan = opt.querySelector('.platform-option-status');
       if (statusSpan) {
         if (user.isLoggedIn && user.platformId === optId) {
-          statusSpan.textContent = 'Active ✓';
+          statusSpan.textContent = 'Active (Demo) ✓';
           statusSpan.style.color = user.color || 'var(--primary)';
         } else {
-          statusSpan.textContent = 'Connect';
+          statusSpan.textContent = 'Connect (Demo)';
           statusSpan.style.color = 'var(--text-sub)';
         }
       }
     });
 
-    // 4. Update Journal Modal Default Platform Selector
+    // 4. Update Journal Modal Default Platform Selector (PRD FR-7)
     const platformSelect = document.getElementById('journalPlatformSelect');
     if (platformSelect && user.isLoggedIn && user.platform) {
       platformSelect.value = user.platform;
