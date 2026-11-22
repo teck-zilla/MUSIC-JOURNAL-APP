@@ -1,6 +1,8 @@
 # Dependencies & Temporary files
 node_modules/
+.next/
 *.log
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
 
