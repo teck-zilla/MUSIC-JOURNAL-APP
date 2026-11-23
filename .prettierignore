@@ -1,0 +1,7 @@
+.next/
+node_modules/
+ndocs/
+js/
+index.html
+package-lock.json
+*.md

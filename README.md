@@ -13,7 +13,9 @@ It is designed for music lovers, students, and anyone who enjoys discovering and
 💡 What problem does it solve?
 People listen to lots of music but often forget songs they enjoyed or why they liked them. The app provides a centralized place to record, organize, and reflect on their music, making it easier to remember favourite songs and discover their personal listening habits.
 
-Tech Stack
+The feature notes below describe the pre-migration client prototype. The PRD v1 target stack is Next.js App Router, TypeScript, Prisma, PostgreSQL and pgvector.
+
+Tech Stack (prototype)
 Pure Vanilla HTML5, CSS3 (using CSS custom properties/variables), and Vanilla JavaScript (ES6+ Modules). No React, No Tailwind.
 HTML – Structure and content
 CSS – Styling and layout
@@ -49,6 +51,46 @@ Spotify Dark Vibe Interface:
 Spotify signature color palette (#121212, #181818, #1DB954), sidebar navigation, hero section, responsive cards, and fixed bottom audio player bar with Web Audio API canvas visualizer.
 
 
+## Pinned versions (PRD 7.8)
+
+Pinned on 22 November 2026 from the npm registry and the Node.js release index. Prisma stays on the 6 line per A47; the registry `latest` tag for `prisma` is an 8.0 release candidate and is not used. The local toolchain when these were pinned was Node 24.19.0; the target pin is the current Active LTS.
+
+| Tool | Exact version |
+|---|---|
+| Node.js | 26.13.1 |
+| next | 16.4.6 |
+| react | 19.3.1 |
+| react-dom | 19.3.1 |
+| typescript | 6.0.3 |
+| prisma | 6.19.3 |
+| @prisma/client | 6.19.3 |
+| better-auth | 1.7.27 |
+| zod | 4.6.7 |
+| @node-rs/argon2 | 2.2.2 |
+| serwist | 9.5.15 |
+| eslint | 10.15.0 |
+| eslint-config-next | 16.4.6 |
+| prettier | 3.10.1 |
+| vitest | 5.1.1 |
+| @types/node | 26.6.6 |
+| @types/react | 19.3.0 |
+| @types/react-dom | 19.3.0 |
+
+## Checks (definition-of-done)
+
+Run these from the project root. The two database-dependent tests are listed for the owner; the agent does not run them.
+
+| Script | Command | Purpose |
+|---|---|---|
+| `npm run lint` | `eslint . --max-warnings=0` | Flat ESLint config from `eslint-config-next` |
+| `npm run typecheck` | `tsc --noEmit` | Strict mode, no emit |
+| `npm test` | `vitest run` | Unit tests, no database |
+| `npm run build` | `next build && npm run check:size` | Build fails above the gzip budget |
+| `npm run check:size` | `node scripts/check-route-size.mjs` | Per-route first-load JS from built HTML, excluding `noModule` polyfills for A8 browsers; fails above 153600 bytes gzipped (NFR-1) |
+| `npm run test:boundary` | `vitest run tests/ai-boundary.test.ts` | Owner-run with database (AI-8, LG-6) |
+| `npm run test:cache` | `vitest run tests/two-member-cache.test.ts` | Owner-run with database (FR-30) |
+| `npm run format:check` | `prettier --check .` | Formatting check, not part of DoD |
+
 ## 🚀 Recent Updates & Changelog
 
 ### 1. PRD FR-7 to FR-10: Simulated Demo Platform Connections
@@ -72,10 +114,11 @@ Spotify signature color palette (#121212, #181818, #1DB954), sidebar navigation,
 This roadmap outlines the sequential phases to transition the current client prototype into a full-stack, production-grade MVP in accordance with [AGENTS.md](file:///c:/Users/teckm/OneDrive/Desktop/MUSIC%20JOURNAL%20APP/AGENTS.md) and the project specification:
 
 ### Phase 1: Project Scaffolding & Next.js Foundation (PRD Section 7.8)
-- [ ] Initialize Next.js App Router workspace with TypeScript.
-- [ ] Pin exact dependency versions in `README.md` (`next`, `react`, `prisma`, `better-auth`, `serwist`, `zod`, `@node-rs/argon2`).
-- [ ] Set up centralized environment variable validation module with Zod (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `CRON_SECRET`, etc.).
-- [ ] Configure ESLint and strict TypeScript type-checking standards.
+- [x] Initialize Next.js App Router workspace with TypeScript.
+- [x] Pin exact dependency versions in `README.md` (`next`, `react`, `prisma`, `better-auth`, `serwist`, `zod`, `@node-rs/argon2`).
+- [x] Set up centralized environment variable validation module with Zod (`DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET`, `CRON_SECRET`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`).
+- [x] Configure ESLint and strict TypeScript type-checking standards.
+- [x] Add the per-route gzip size gate to the build (NFR-1).
 
 ### Phase 2: Database Schema & Vector Migrations (PRD Section 7.9, 7.10, 9.4)
 - [ ] Author [schema.prisma](file:///c:/Users/teckm/OneDrive/Desktop/MUSIC%20JOURNAL%20APP/schema.prisma) matching PRD models (`User`, `Session`, `Account`, `Device`, `Song`, `JournalEntry`, `CommunityGroup`, `GroupMembership`, `Report`, `SystemEvent`).
