@@ -1,0 +1,454 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector, pg_trgm]
+}
+
+enum Tier {
+  FREE
+}
+
+enum Mood {
+  ENERGETIC
+  CHILL
+  MELANCHOLIC
+  FOCUSED
+  EUPHORIC
+  NOSTALGIC
+  HYPE
+}
+
+enum Platform {
+  SPOTIFY
+  APPLE_MUSIC
+  YT_MUSIC
+  TIDAL
+  AUDIOMACK
+  BANDCAMP
+}
+
+enum ConnectionStatus {
+  NOT_CONNECTED
+  CONNECTED
+  ERROR
+}
+
+enum ConnectionIssueType {
+  CANCELLED
+  TIMEOUT
+  NETWORK
+}
+
+enum LoginMethod {
+  GOOGLE
+  GITHUB
+  DISCORD
+  ACTIVATION_CODE
+}
+
+enum LoginOutcome {
+  SUCCESS
+  WRONG_CODE
+  WRONG_PIN
+  CODE_LOCKED
+  IP_BLOCKED
+  PROVIDER_ERROR
+}
+
+enum SongSource {
+  ITUNES
+  OFFLINE_SEED
+  MANUAL
+}
+
+enum PlayOrigin {
+  SEARCH
+  DISCOVER
+  JOURNAL
+  GROUP
+}
+
+enum QuestionKind {
+  WHY_THIS
+}
+
+enum QuestionStatus {
+  OK
+  ERROR
+  RATE_LIMITED
+  INVALID_OUTPUT
+  TEMPLATE_FALLBACK
+}
+
+enum CounterKind {
+  ENTRY
+  SEARCH
+  WHY_THIS
+  REPORT
+}
+
+enum ReportReason {
+  ILLEGAL
+  ABUSE
+  PRIVATE_INFO
+  OTHER
+}
+
+enum SystemEventKind {
+  SEARCH_FALLBACK
+  EMBED_FAIL
+  LLM_FAIL
+  CRON_FAIL
+  SAVE_TIMING
+  OTHER
+}
+
+model User {
+  id             String    @id
+  name           String
+  email          String    @unique
+  emailVerified  Boolean   @default(false)
+  image          String?
+  displayName    String    @default("") @db.VarChar(40)
+  timezone       String    @default("UTC") @db.VarChar(64)
+  tier           Tier      @default(FREE)
+  ageConfirmedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  sessions         Session[]
+  accounts         Account[]
+  devices          Device[]
+  activationCodes  ActivationCode[]
+  loginAttempts    LoginAttempt[]
+  connections      PlatformConnection[]
+  connectionIssues ConnectionIssue[]
+  manualSongs      Song[]
+  entries          JournalEntry[]
+  plays            PlayEvent[]
+  usageSessions    UsageSession[]
+  questionLogs     QuestionLog[]
+  memberships      GroupMember[]
+  shares           GroupShare[]
+  reports          ContentReport[]
+  counters         UsageCounter[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  deviceId  String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([expiresAt])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Device {
+  id               String          @id @default(cuid())
+  userId           String
+  label            String          @db.VarChar(60)
+  userAgent        String?         @db.VarChar(300)
+  activationCodeId String?         @unique
+  createdAt        DateTime        @default(now())
+  lastSeenAt       DateTime        @default(now())
+  revokedAt        DateTime?
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activationCode   ActivationCode? @relation(fields: [activationCodeId], references: [id])
+  sessions         Session[]
+
+  @@index([userId])
+}
+
+model ActivationCode {
+  id           String    @id @default(cuid())
+  userId       String
+  codeHash     String    @unique @db.VarChar(64)
+  pinHash      String    @db.VarChar(255)
+  failedPins   Int       @default(0)
+  lockedUntil  DateTime?
+  issuedAt     DateTime  @default(now())
+  usedAt       DateTime?
+  supersededAt DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device       Device?
+
+  @@index([userId, supersededAt])
+}
+
+model LoginAttempt {
+  id               String       @id @default(cuid())
+  userId           String?
+  activationCodeId String?
+  ipHash           String       @db.VarChar(64)
+  method           LoginMethod
+  outcome          LoginOutcome
+  createdAt        DateTime     @default(now())
+  user             User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ipHash, createdAt])
+  @@index([userId, createdAt])
+}
+
+model PlatformConnection {
+  id             String           @id @default(cuid())
+  userId         String
+  platform       Platform
+  status         ConnectionStatus @default(NOT_CONNECTED)
+  handle         String?          @db.VarChar(60)
+  simulated      Boolean          @default(true)
+  connectedAt    DateTime?
+  disconnectedAt DateTime?
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+}
+
+model ConnectionIssue {
+  id         String              @id @default(cuid())
+  userId     String
+  platform   Platform
+  type       ConnectionIssueType
+  message    String              @db.VarChar(300)
+  simulated  Boolean             @default(true)
+  createdAt  DateTime            @default(now())
+  resolvedAt DateTime?
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([platform, createdAt])
+}
+
+model Song {
+  id              String         @id @default(cuid())
+  itunesTrackId   Int?           @unique
+  title           String         @db.VarChar(300)
+  artist          String         @db.VarChar(300)
+  album           String?        @db.VarChar(300)
+  genre           String?        @db.VarChar(60)
+  releaseYear     Int?
+  durationMs      Int?
+  artworkUrl      String?
+  previewUrl      String?
+  trackViewUrl    String?
+  source          SongSource
+  createdByUserId String?
+  inCatalogue     Boolean        @default(false)
+  seedMoods       Mood[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdBy       User?          @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  vector          SongVector?
+  entries         JournalEntry[]
+  plays           PlayEvent[]
+
+  @@index([artist])
+  @@index([genre])
+  @@index([inCatalogue])
+  @@index([createdByUserId])
+}
+
+model SongVector {
+  songId       String                      @id
+  tier         Tier                        @default(FREE)
+  moods        Mood[]
+  genre        String?                     @db.VarChar(60)
+  modelVersion String                      @db.VarChar(40)
+  embedding    Unsupported("vector(768)")?
+  createdAt    DateTime                    @default(now())
+  updatedAt    DateTime                    @updatedAt
+  song         Song                        @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([tier])
+}
+
+model SearchCache {
+  id        String     @id @default(cuid())
+  queryKey  String     @unique @db.VarChar(120)
+  songIds   String[]
+  source    SongSource
+  fetchedAt DateTime   @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model JournalEntry {
+  id         String      @id @default(cuid())
+  clientId   String      @db.VarChar(36)
+  userId     String
+  songId     String
+  rating     Int
+  moods      Mood[]
+  context    String?     @db.VarChar(40)
+  note       String?     @db.VarChar(2000)
+  origin     PlayOrigin  @default(SEARCH)
+  listenedAt DateTime
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song       Song        @relation(fields: [songId], references: [id], onDelete: Cascade)
+  share      GroupShare?
+
+  @@unique([userId, clientId])
+  @@index([userId, listenedAt(sort: Desc), id])
+  @@index([userId, songId])
+  @@index([songId])
+}
+
+model PlayEvent {
+  id       String     @id @default(cuid())
+  userId   String
+  songId   String
+  origin   PlayOrigin
+  playedAt DateTime
+  playedMs Int
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song     Song       @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt(sort: Desc)])
+  @@index([songId])
+}
+
+model UsageSession {
+  id              String    @id @default(cuid())
+  userId          String
+  deviceId        String?
+  startedAt       DateTime  @default(now())
+  lastHeartbeatAt DateTime  @default(now())
+  endedAt         DateTime?
+  activeSeconds   Int       @default(0)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startedAt])
+}
+
+model QuestionLog {
+  id        String         @id @default(cuid())
+  userId    String
+  kind      QuestionKind
+  songId    String?
+  question  String         @db.VarChar(500)
+  answer    String?        @db.VarChar(500)
+  model     String         @db.VarChar(60)
+  status    QuestionStatus
+  latencyMs Int
+  createdAt DateTime       @default(now())
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model Group {
+  id        String        @id @default(cuid())
+  name      String        @unique @db.VarChar(60)
+  createdAt DateTime      @default(now())
+  members   GroupMember[]
+  shares    GroupShare[]
+}
+
+model GroupMember {
+  groupId  String
+  userId   String
+  joinedAt DateTime @default(now())
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@index([userId])
+}
+
+model GroupShare {
+  id       String          @id @default(cuid())
+  groupId  String
+  entryId  String          @unique
+  userId   String
+  sharedAt DateTime        @default(now())
+  hiddenAt DateTime?
+  group    Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  entry    JournalEntry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports  ContentReport[]
+
+  @@index([groupId, sharedAt(sort: Desc)])
+}
+
+model ContentReport {
+  id         String       @id @default(cuid())
+  shareId    String
+  reporterId String
+  reason     ReportReason
+  note       String?      @db.VarChar(300)
+  createdAt  DateTime     @default(now())
+  share      GroupShare   @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([shareId, reporterId])
+  @@index([createdAt])
+}
+
+model UsageCounter {
+  userId String
+  day    DateTime    @db.Date
+  kind   CounterKind
+  count  Int         @default(0)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day, kind])
+}
+
+model SystemEvent {
+  id        String          @id @default(cuid())
+  kind      SystemEventKind
+  message   String          @db.VarChar(300)
+  valueInt  Int?
+  createdAt DateTime        @default(now())
+
+  @@index([kind, createdAt])
+}
