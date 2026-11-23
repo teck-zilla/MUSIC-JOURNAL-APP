@@ -57,7 +57,7 @@ Pinned on 22 November 2026 from the npm registry and the Node.js release index. 
 
 | Tool | Exact version |
 |---|---|
-| Node.js | 26.13.1 |
+| Node.js | 24 |
 | next | 16.4.6 |
 | react | 19.3.1 |
 | react-dom | 19.3.1 |
@@ -72,7 +72,7 @@ Pinned on 22 November 2026 from the npm registry and the Node.js release index. 
 | eslint-config-next | 16.4.6 |
 | prettier | 3.10.1 |
 | vitest | 5.1.1 |
-| @types/node | 26.6.6 |
+| @types/node | 24.19.2 |
 | @types/react | 19.3.0 |
 | @types/react-dom | 19.3.0 |
 
