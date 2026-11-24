@@ -132,7 +132,7 @@ This roadmap outlines the sequential phases to transition the current client pro
 - [ ] Enforce privacy rules: store only salted IP hashes (no raw IPs) and omit provider profile pictures.
 
 ### Phase 4: Server-Side Song Search & Apple Music Compliance (PRD FR-11 to FR-14, LG-1, LG-3)
-- [ ] Build `/api/songs/search` server-side proxy to iTunes Search API with global rate limiting (15 calls/min), member daily limits (200 calls/day), and 24-hour cache.
+- [x] Build `/api/songs/search` server-side proxy to iTunes Search API with global rate limiting (15 calls/min), member daily limits (200 calls/day), and 24-hour cache.
 - [ ] Integrate required Apple Music badge and affiliate track link next to all preview audio and album artwork to satisfy **LG-1**.
 - [ ] Build manual song entry modal (creator-only visibility, no artwork, no vector embedding).
 - [ ] Implement `PlayEvent` tracking in UTC for preview playback $\ge 5$ seconds.
