@@ -290,6 +290,7 @@ Example: a member opens Discover.
 ### 7.3 Auth with activation code, PIN and device linking
 
 - Better Auth with its Prisma adapter and database sessions [sessions stored in the Session table, so a device can be revoked]. ASSUMPTION A40: Better Auth, not Auth.js. Reason: Auth.js is in security fix only mode and its own maintainers advise new projects to use Better Auth.
+- OAuth client credentials use these environment variables: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`. All are required. Why: FR-1 names the three providers and the app validates these names at startup.
 - Run the library's generate command for Prisma, then merge its output with the schema in 7.8. Keep the model names User, Session, Account and Verification. Re-run it after any plugin change.
 - Added User fields: displayName, timezone, tier, ageConfirmedAt. A database hook sets displayName from the provider name at first sign in. The member can change it on the Profile screen. The provider picture is not saved.
 - Added Session field: deviceId. The app sets a cookie named ms_device (HttpOnly) with a random id. A session create hook reads it and attaches the matching Device. If the cookie is missing or the device is revoked, the hook creates a new Device and the response sets a new cookie. If the hook cannot read cookies, create the Device in the first authenticated route instead.
