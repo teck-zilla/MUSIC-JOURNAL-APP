@@ -111,7 +111,7 @@ Run these from the project root. The two database-dependent tests are listed for
 
 ## 🗺️ Step-by-Step Roadmap to Reach Working MVP (PRD v1)
 
-This roadmap outlines the sequential phases to transition the current client prototype into a full-stack, production-grade MVP in accordance with [AGENTS.md](file:///c:/Users/teckm/OneDrive/Desktop/MUSIC%20JOURNAL%20APP/AGENTS.md) and the project specification:
+This roadmap outlines the sequential phases to transition the current client prototype into a full-stack, production-grade MVP in accordance with [AGENTS.md](file:///c:/Users/teckm/OneDrive/Desktop/MUSIC%20JOURNAL%20APP/AGENTS.md) and the project specification. Status reflects repository evidence as of 25 November 2026; owner-run checks remain unverified unless noted.
 
 ### Phase 1: Project Scaffolding & Next.js Foundation (PRD Section 7.8)
 - [x] Initialize Next.js App Router workspace with TypeScript.
@@ -121,15 +121,15 @@ This roadmap outlines the sequential phases to transition the current client pro
 - [x] Add the per-route gzip size gate to the build (NFR-1).
 
 ### Phase 2: Database Schema & Vector Migrations (PRD Section 7.9, 7.10, 9.4)
-- [ ] Author [schema.prisma](file:///c:/Users/teckm/OneDrive/Desktop/MUSIC%20JOURNAL%20APP/schema.prisma) matching PRD models (`User`, `Session`, `Account`, `Device`, `Song`, `JournalEntry`, `CommunityGroup`, `GroupMembership`, `Report`, `SystemEvent`).
-- [ ] Author hand-written SQL migration script for Neon PostgreSQL (`CREATE EXTENSION IF NOT EXISTS vector;`, `pg_trgm` extension, composite indexes, and check constraints for ratings 1–5 and 1–3 moods).
-- [ ] Execute migration on Neon PostgreSQL and verify extension version meets launch gate **LG-7** ($\ge 0.8.0$).
+- [x] Author [schema.prisma](file:///c:/Users/teckm/OneDrive/Desktop/MUSIC%20JOURNAL%20APP/schema.prisma) matching PRD models (`User`, `Session`, `Account`, `Device`, `Song`, `JournalEntry`, `CommunityGroup`, `GroupMembership`, `Report`, `SystemEvent`).
+- [x] Author hand-written SQL migration script for Neon PostgreSQL (`CREATE EXTENSION IF NOT EXISTS vector;`, `pg_trgm` extension, composite indexes, and check constraints for ratings 1–5 and 1–3 moods).
+- [ ] Execute migration on Neon PostgreSQL and verify extension version meets launch gate **LG-7** ($\ge 0.8.0$). Owner-run; agent has not executed DB commands.
 
 ### Phase 3: Member Authentication & Device Linking (PRD FR-1 to FR-6, LG-5)
-- [ ] Implement Better Auth endpoints for Google, GitHub, and Discord OAuth with database-backed sessions.
-- [ ] Build `/signin` screen with the mandatory `"I am 13 or older"` age verification tick box.
+- [x] Implement Better Auth endpoints for Google, GitHub, and Discord OAuth with database-backed sessions.
+- [x] Build `/signin` screen with the mandatory `"I am 13 or older"` age verification tick box.
 - [ ] Implement device linking flow using 8-character Crockford base32 activation codes and 6-digit `@node-rs/argon2` PINs (`/api/device/code`, `/api/device/activate`, `/link`).
-- [ ] Enforce privacy rules: store only salted IP hashes (no raw IPs) and omit provider profile pictures.
+- [x] Enforce privacy rules in auth flow: store only salted IP hashes (no raw IPs) and omit provider profile pictures.
 
 ### Phase 4: Server-Side Song Search & Apple Music Compliance (PRD FR-11 to FR-14, LG-1, LG-3)
 - [x] Build `/api/songs/search` server-side proxy to iTunes Search API with global rate limiting (15 calls/min), member daily limits (200 calls/day), and 24-hour cache.
@@ -172,4 +172,8 @@ This roadmap outlines the sequential phases to transition the current client pro
 - [ ] Build "Delete My Account" permanently cascading deletion of all member rows.
 - [ ] Implement active session time tracking via `navigator.sendBeacon` heartbeat without external analytics scripts.
 - [ ] Pass all Launch Gates (**LG-1** to **LG-8**) prior to inviting production members.
+
+## Next action
+
+**Implement Phase 3 device linking (FR-3 to FR-6, LG-5 build gate):** add `/api/device/code`, `/api/device/activate`, and `/link` with 8-char Crockford base32 activation codes, 6-digit `@node-rs/argon2` PINs, rate/lockout rules, and device/session behavior per PRD. Before dependent work, owner should prove the activate-route build gate on the installed Better Auth version (PRD 7.3, LG-5). Phase 2 migration execution/LG-7 verification and Phase 4 LG-1/FR-12-14 items remain owner/next implementation dependencies.
 
